@@ -1,0 +1,15 @@
+- change to chromadb
+- change llm prompt
+- chatgpt project management
+- scrape more scripts
+- make test set with Q & A videos
+- gradio or streamlit web interface
+- way to track querys and answers?
+
+
+- test set
+-- recall: retrieved relevant documents / all relevant documents
+-- precision: retrieved relevant documents / all retrieved documents
+-- [RETRIEVER] given a chunk -> create question: can get precision for the retriever
+-- [LLM] turn QnA session into test set
+-- llamaindex evaluators: https://docs.llamaindex.ai/en/stable/module_guides/evaluating/

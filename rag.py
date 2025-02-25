@@ -6,13 +6,15 @@ import re
 import openai
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Document, VectorStoreIndex, StorageContext, Settings, load_index_from_storage
+from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core.data_structs import Node
 
+import chromadb
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 json_path = 'data.json'
-PERSIST_DIR = "./storage"
+PERSIST_DIR = "./chroma_db"
 
 
 def create_doc(context, video_id, video_title, video_header, segment_idx, time_start, time_end):
@@ -65,16 +67,37 @@ def create_docs(json_path):
                 chunks.append({'timestamp': timestamp, 'text': text})  
     return docs
 
+
+Settings.embed_model = HuggingFaceEmbedding(model_name='BAAI/bge-small-en-v1.5')
+
+
+
 if not os.path.exists(PERSIST_DIR):
     docs = create_docs(json_path) # len: 6069
-    nodes = [Node(text=document['text']) for document in docs]
-    Settings.embed_model = HuggingFaceEmbedding(model_name='BAAI/bge-small-en-v1.5')
+    nodes = [Node(text=document.text) for document in docs]
+    
+    db = chromadb.PersistentClient(path=PERSIST_DIR) # creates the directory
+    chroma_collection = db.get_or_create_collection("huberman")
+    vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
     index = VectorStoreIndex(nodes)
     index.storage_context.persist(persist_dir=PERSIST_DIR)
 else:
-    storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
+    db = chromadb.PersistentClient(path=PERSIST_DIR)
+    chroma_collection = db.get_or_create_collection("huberman")
+    vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store, persist_dir=PERSIST_DIR)
     index = load_index_from_storage(storage_context)
     
-query_engine = index.as_query_engine(similarity_top_k=3)
-response = query_engine.query("Are chemical sunscreens safe?")
-print(response)
+    
+# retriever
+retriever = index.as_retriever(similarity_top_k=5)
+retrieved_nodes = retriever.retrieve("Are chemical sunscreens safe?")
+
+for node in retrieved_nodes:
+    print('-------------')
+    print(node.score)
+    print(node.text)
+# response = query_engine.query("Are chemical sunscreens safe?")
+# print(response)
