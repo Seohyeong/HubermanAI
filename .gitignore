@@ -1,4 +1,7 @@
 .vscode
 .env
 
-data.json
+logs/
+chroma_db/
+
+TODO.txt
