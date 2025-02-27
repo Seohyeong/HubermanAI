@@ -3,5 +3,6 @@
 
 logs/
 chroma_db/
+data/__pycache__
 
 TODO.txt
