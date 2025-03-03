@@ -21,6 +21,6 @@ def chat(query_input: QueryInput):
         
     llm_output = rag_chain.invoke(query_input.question)
     
-    logging.info(f"Session ID: {session_id}, AI Response: {llm_output.answer}")
+    logging.info(f"Session ID: {session_id}, AI Response: {llm_output['answer']}")
     
-    return QueryOutput(session_id=session_id, answer=llm_output.answer, docs=llm_output.docs)
+    return QueryOutput(session_id=session_id, answer=llm_output["answer"], docs=llm_output["docs"])
