@@ -1,0 +1,46 @@
+# ref: https://github.com/PradipNichite/Youtube-Tutorials/blob/main/Langchain%20RAG%20Course%202024/app/streamlit_app.py
+import streamlit as st
+from api_utils import get_api_response
+
+def display_chat_interface():
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    if prompt := st.chat_input("Query:"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.spinner("Generating response..."):
+            response = get_api_response(prompt, st.session_state.session_id)
+            
+            if response:
+                st.session_state.session_id = response.get('session_id')
+                st.session_state.messages.append({"role": "assistant", "content": response['answer']})
+                
+                with st.chat_message("assistant"):
+                    st.markdown(response['answer'])
+                    
+                    with st.expander("Details"):
+                        st.subheader("Generated Answer")
+                        st.code(response['answer'])
+                        st.subheader("Session ID")
+                        st.code(response['session_id'])
+            else:
+                st.error("Failed to get a response from the API. Please try again.")
+                
+                
+                
+st.title("Huberman RAG Chatbot")
+
+# Initialize session state variables
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+if "session_id" not in st.session_state:
+    st.session_state.session_id = None
+
+
+# Display the chat interface
+display_chat_interface()

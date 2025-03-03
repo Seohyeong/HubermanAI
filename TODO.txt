@@ -1,8 +1,0 @@
-- test set
--- llamaindex evaluators: https://docs.llamaindex.ai/en/stable/module_guides/evaluating/
-
-- prompt
--- how does prompting work inside llamaindex?
-
-- latency
--- llama 3b too slow -> Ollama
