@@ -7,7 +7,7 @@ from tqdm import tqdm
 import torch
 from transformers import pipeline
 
-from api.utils import SYSTEM_PROMPT
+from utils import SYSTEM_PROMPT
 
 raw_data_path = 'api/data/raw_data.json'
 train_data_path = 'api/data/train.json' # formatted raw_data

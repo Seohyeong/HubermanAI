@@ -1,9 +1,9 @@
-from api.utils import QueryInput, QueryOutput
-from rag import RagChatbot
-
 from fastapi import FastAPI
 import uuid
 import logging
+
+from utils import QueryInput, QueryOutput
+from rag import RagChatbot
 
 logging.basicConfig(filename="app.log", level=logging.INFO)
 
