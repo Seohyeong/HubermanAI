@@ -5,5 +5,7 @@ __pycache__
 TODO.txt
 
 logs/
+api/app.log
+
 chroma_db/
 api/data/*.json
