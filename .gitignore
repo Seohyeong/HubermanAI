@@ -7,5 +7,6 @@ TODO.txt
 logs/
 api/app.log
 
+history_db.db
 chroma_db/
 api/data/*.json
