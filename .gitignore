@@ -1,8 +1,9 @@
 .vscode
 .env
+__pycache__
+
+TODO.txt
 
 logs/
 chroma_db/
-data/__pycache__
-
-TODO.txt
+api/data/*.json
