@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import os
 from pathlib import Path
+import sqlite3
 
 # langchain
 from langchain_chroma import Chroma
@@ -15,6 +16,76 @@ from langchain_openai import ChatOpenAI
 from config import get_config
 from utils import create_docs, docs2str, \
     CHAT_PROMPT, QA_SYSTEM_PROMPT, CONTEXTUALIZE_Q_SYSTEM_PROMPT
+
+
+def _init_config(llm_model_name):
+    config = get_config(llm_model_name)
+    load_dotenv()
+    if "openai" in llm_model_name:
+        os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
+    os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN")
+    os.environ["LANGCHAIN_TRACING"] = os.getenv("LANGSMITH_TRACING")
+    os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGSMITH_API_KEY")
+    os.environ["LANGCHAIN_PROJECT"] = os.getenv("LANGSMITH_PROJECT")
+
+    def resolve_path(config, project_dir):
+        config.db_dir = os.path.join(project_dir, config.db_dir)
+        config.history_db = os.path.join(project_dir, config.history_db)
+        config.train_data_path = os.path.join(project_dir, config.train_data_path)
+        config.qna_test_data_path = os.path.join(project_dir, config.qna_test_data_path)
+        config.syn_test_data_path = os.path.join(project_dir, config.syn_test_data_path)
+
+    project_dir = str(Path(__file__).resolve().parent.parent)
+    resolve_path(config, project_dir)
+    return config
+    
+
+class HistoryDB():
+    def __init__(self, llm_model_name):
+        self.config = self._init_config(llm_model_name)
+        self.db_name = self.config.history_db
+        conn = self.get_db_connection()
+        
+        conn.execute('''CREATE TABLE IF NOT EXISTS history_db
+        (id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT,
+        query TEXT,
+        response TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+        conn.close()
+
+    def _init_config(self, llm_model_name):
+        return _init_config(llm_model_name)
+        
+    def get_db_connection(self):
+        conn = sqlite3.connect(self.db_name)
+        conn.row_factory = sqlite3.Row
+        return conn
+    
+    def insert_history_db(self, session_id, query, response):
+        conn = self.get_db_connection()
+        conn.execute('''INSERT INTO history_db (session_id, query, response) 
+                    VALUES (?, ?, ?)''',
+                    (session_id, query, response))
+        conn.commit()
+        conn.close()
+
+    def get_chat_history(self, session_id):
+        conn = self.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''SELECT query, response 
+                    FROM history_db 
+                    WHERE session_id = ? 
+                    ORDER BY created_at DESC 
+                    LIMIT 3''', (session_id,))
+        messages = []
+        for row in cursor.fetchall():
+            messages.extend([
+                {"role": "human", "content": row['query']},
+                {"role": "ai", "content": row['response']}
+            ])
+        conn.close()
+        return messages
 
 
 class RagChatbot():
@@ -45,25 +116,7 @@ class RagChatbot():
         
         
     def _init_config(self, llm_model_name):
-        config = get_config(llm_model_name)
-
-        load_dotenv()
-        if "openai" in llm_model_name:
-            os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
-        os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN")
-        os.environ["LANGCHAIN_TRACING"] = os.getenv("LANGSMITH_TRACING")
-        os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGSMITH_API_KEY")
-        os.environ["LANGCHAIN_PROJECT"] = os.getenv("LANGSMITH_PROJECT")
-
-        def resolve_path(config, project_dir):
-            config.db_dir = os.path.join(project_dir, config.db_dir)
-            config.train_data_path = os.path.join(project_dir, config.train_data_path)
-            config.qna_test_data_path = os.path.join(project_dir, config.qna_test_data_path)
-            config.syn_test_data_path = os.path.join(project_dir, config.syn_test_data_path)
-
-        project_dir = str(Path(__file__).resolve().parent.parent)
-        resolve_path(config, project_dir)
-        return config
+        return _init_config(llm_model_name)
     
     def _init_models(self):
         embedding_function = HuggingFaceEmbeddings(

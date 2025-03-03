@@ -12,6 +12,9 @@ class Config:
     db_dir: str = "chroma_db"
     db_collection_name = "huberman"
     
+    # sqlite3
+    history_db = "history_db.db"
+    
     # dataset
     train_data_path: str = "api/data/train.json"
     syn_test_data_path: str = "api/data/syn_test.json"
