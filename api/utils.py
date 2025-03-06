@@ -63,7 +63,7 @@ def create_docs(json_path):
     docs = []
     for item in data:
         doc = Document(
-            text=item['context'],
+            page_content=item['context'],
             metadata={'video_id': item['video_id'], 
                     'video_title': item['video_title'], 
                     'video_header': item['video_header'],
@@ -72,7 +72,7 @@ def create_docs(json_path):
                     'time_end': item['time_end']},
             )
         docs.append(doc)
-    return docs
+    return docs # len: 6165
 
 
 # pydantic
