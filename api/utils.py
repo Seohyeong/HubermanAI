@@ -40,7 +40,7 @@ QA_SYSTEM_PROMPT = (
     "Using only the information from the context, answer the query in clear and grammatically correct sentences.\n"
     "Note: The context may contain informal or ungrammatical phrases as it is extracted from a YouTube video.\n"
     "Use all relevant information from the context but do not make up any facts that are not given.\n"
-    "Do not simply summarize the answer based on the given context, give a detailed and explicit answer.\n"
+    "Do not simply summarize the answer based on the given context, give a detailed and explicit answer but keep it concise.\n"
     "Format the response properly, using paragraphs for better readability. Use bold text and bullet points where necessary, but avoid excessive markdown formatting."
 )
 
