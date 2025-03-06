@@ -48,11 +48,14 @@ def get_data(driver, wait_time, videoid):
         transcript_button.click()
     except Exception as e:
         return {'status': 'load_transcript_error', 'message': str(e)}
-
+    
+    # TODO: fix occational timeoutexception error.
     # get transcript
     try:
+        WebDriverWait(driver, 10).until(lambda d: d.execute_script("return document.readyState") == "complete")
         container = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="segments-container"]')))
         children = container.find_elements(By.XPATH, './*')
+        driver.switch_to.default_content()
         for _, child in enumerate(children):
             tag_name = child.tag_name
             if tag_name == 'ytd-transcript-section-header-renderer':
@@ -72,7 +75,7 @@ def main():
                         help='channel id of a youtube channel')
     parser.add_argument('--wait_time', type=int, default=30)
     parser.add_argument('--sleep_time', type=int, default=10)
-    parser.add_argument('--output_file_path', type=str, default='raw_data.json')
+    parser.add_argument('--output_file_path', type=str, default='/Users/seohyeong/Projects/HubermanAI/api/data/raw_data.json')
     
     args = parser.parse_args()
     
@@ -116,3 +119,5 @@ def main():
     
 if __name__ == '__main__':
     main()
+    
+    # 25 left
