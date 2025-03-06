@@ -39,6 +39,15 @@ if "videos" not in st.session_state:
     st.session_state.videos = []
 
 
+# Display sidebar 
+st.sidebar.title("📜 Questions Asked")
+if st.session_state.chat_history:
+    for i, entries in enumerate(st.session_state.chat_history):
+        for entry in entries:
+            if entry["role"] == "user":
+                st.sidebar.markdown(f"**🧑 You:** {entry['content']}")
+                  
+                  
 # Display chat and video history
 for messages, videos in zip(st.session_state.chat_history, st.session_state.videos):
     for message in messages:
@@ -54,8 +63,9 @@ for messages, videos in zip(st.session_state.chat_history, st.session_state.vide
                         :gray[*{}*]
                         """.format(video["video_title"], video["video_header"]))
             st.markdown("[Watch it on Youtube](%s)" % video["video_url_start_end"])
-        
 
+
+# main
 if prompt := st.chat_input("Query:"):
     with st.chat_message("user", avatar="🧐"):
         st.markdown(prompt)
