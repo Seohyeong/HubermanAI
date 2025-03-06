@@ -1,5 +1,7 @@
 import json
 import os
+import sys
+from pathlib import Path
 import random
 import re
 from tqdm import tqdm
@@ -7,12 +9,13 @@ from tqdm import tqdm
 import torch
 from transformers import pipeline
 
+sys.path.append(str(Path(__file__).parent.parent))
 from utils import SYSTEM_PROMPT
 
-raw_data_path = 'api/data/raw_data.json'
-train_data_path = 'api/data/train.json' # formatted raw_data
-qna_test_data_path = 'api/data/qna_test.json' # test dataset created from the qna sessions
-syn_test_data_path = 'api/data/syn_test.json' # test dataset created synthetically 
+raw_data_path = os.path.join(str(Path(__file__).parent), 'raw_data.json')
+train_data_path = os.path.join(str(Path(__file__).parent), 'train.json') # formatted raw_data
+qna_test_data_path = os.path.join(str(Path(__file__).parent), 'qna_test.json') # test dataset created from the qna sessions
+syn_test_data_path = os.path.join(str(Path(__file__).parent), 'syn_test.json') # test dataset created synthetically 
         
 def create_train_data(raw_json):
     docs = []
