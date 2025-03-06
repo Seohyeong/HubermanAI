@@ -79,6 +79,7 @@ def create_docs(json_path):
 class QueryInput(BaseModel):
     session_id: str = Field(default=None)
     question: str
+    chat_history: list = Field(default=[])
 
 class QueryOutput(BaseModel):
     session_id: str

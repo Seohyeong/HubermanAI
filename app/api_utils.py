@@ -1,13 +1,14 @@
 import requests
 import streamlit as st
 
-def get_api_response(question, session_id):
+def get_api_response(question, chat_history, session_id):
     headers = {
         'accept': 'application/json',
         'Content-Type': 'application/json'
     }
     data = {
-        "question": question
+        "question": question,
+        "chat_history": chat_history[-3:] # keep track of last 3 at most
     }
     if session_id:
         data["session_id"] = session_id
