@@ -148,9 +148,18 @@ class RagChatbot():
                                                 persist_directory=self.config.db_dir)
         return vectorstore
         
-        
+    def _validate_docs(self, docs):
+        new_docs = []
+        doc_ids = set()
+        for doc in docs:
+            if doc.id not in doc_ids:
+                new_docs.append(doc)
+                doc_ids.add(doc.id)
+        return new_docs
+    
     def invoke(self, query):
         docs = self.retriever.invoke(query)
+        docs = self._validate_docs(docs)
         context = docs2str(docs)
         llm_response = self.llm.invoke(self.prompt.format(context=context, question=query))
         
@@ -170,6 +179,7 @@ class RagChatbot():
         
     def invoke_with_history(self, query, chat_history):
         llm_response = self.rag_chain.invoke({"input": query, "chat_history": chat_history})
+        docs = self._validate_docs(llm_response["context"])
         
         return {
             "answer": llm_response["answer"],
@@ -181,7 +191,7 @@ class RagChatbot():
                     "time_start": doc.metadata.get("time_start"),
                     "time_end": doc.metadata.get("time_end")
                 }
-                for doc in llm_response["context"]
+                for doc in docs
             ]
         } 
 
