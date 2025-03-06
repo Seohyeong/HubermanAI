@@ -8,8 +8,8 @@ from rag import RagChatbot, HistoryDB
 logging.basicConfig(filename="app.log", level=logging.INFO)
 
 app = FastAPI()
-rag_chain = RagChatbot("openai")
-history_db = HistoryDB("openai")
+rag_chain = RagChatbot("cohere")
+history_db = HistoryDB("cohere")
 
 @app.post("/chat", response_model=QueryOutput)
 def chat(query_input: QueryInput):

@@ -29,6 +29,10 @@ class Config:
         return cls(generation_model = "gpt-3.5-turbo")
         
     @classmethod
+    def cohere(cls):
+        return cls(generation_model = "command-r-plus-08-2024")
+    
+    @classmethod
     def llama(cls):
         return cls(generation_model = "meta-llama/Llama-3.2-3B-Instruct")
     

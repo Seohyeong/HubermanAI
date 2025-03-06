@@ -9,8 +9,10 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
+
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
+from langchain_cohere import ChatCohere
 
 # rsc
 from config import get_config
@@ -21,8 +23,10 @@ from utils import create_docs, docs2str, \
 def _init_config(llm_model_name):
     config = get_config(llm_model_name)
     load_dotenv()
-    if "openai" in llm_model_name:
+    if llm_model_name == "openai":
         os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
+    elif llm_model_name == "cohere":
+        os.environ["COHERE_API_KEY"] = os.getenv("COHERE_API_KEY")
     os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN")
     os.environ["LANGCHAIN_TRACING"] = os.getenv("LANGSMITH_TRACING")
     os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGSMITH_API_KEY")
@@ -90,7 +94,8 @@ class HistoryDB():
 
 class RagChatbot():
     def __init__(self, llm_model_name):
-        self.config = self._init_config(llm_model_name)
+        self.llm_model_name = llm_model_name
+        self.config = self._init_config(self.llm_model_name)
         
         self.embedding_function, self.llm = self._init_models()
         self.vectorstore = self._init_db()
@@ -124,7 +129,10 @@ class RagChatbot():
             model_kwargs={'device': 'cuda'},
             encode_kwargs={'normalize_embeddings': False}
             )
-        llm = ChatOpenAI(model=self.config.generation_model)
+        if self.llm_model_name == "openai":
+            llm = ChatOpenAI(model=self.config.generation_model)
+        elif self.llm_model_name == "cohere":
+            llm = ChatCohere(model=self.config.generation_model)
         return embedding_function, llm
         
     def _init_db(self):
@@ -181,7 +189,7 @@ class RagChatbot():
 def main():
     from langchain_core.messages import HumanMessage, AIMessage
     
-    rag_chain = RagChatbot("openai")
+    rag_chain = RagChatbot("cohere")
     
     q1 = "Is chemical sunscreen bad for you?"
     q2 = "Where can I find it?"
