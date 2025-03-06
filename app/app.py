@@ -41,8 +41,6 @@ if "videos" not in st.session_state:
 
 # Display chat and video history
 for messages, videos in zip(st.session_state.chat_history, st.session_state.videos):
-    print(messages)
-    print(messages[0])
     for message in messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
@@ -64,7 +62,6 @@ if prompt := st.chat_input("Query:"):
 
     with st.spinner("Generating response..."):
         flattened_chat_history = [item for sublist in st.session_state.chat_history for item in sublist]
-        print(flattened_chat_history)
         response = get_api_response(question = prompt, 
                                     chat_history = flattened_chat_history, 
                                     session_id = st.session_state.session_id)
@@ -73,7 +70,6 @@ if prompt := st.chat_input("Query:"):
             st.session_state.session_id = response.get('session_id')
             st.session_state.chat_history.append([{"role": "user", "content": prompt},
                                                   {"role": "assistant", "content": response['answer']}])
-            print("chat_history: ", st.session_state.chat_history)
             
             with st.chat_message("assistant", avatar="🤖"):
                 st.markdown(response['answer'])
