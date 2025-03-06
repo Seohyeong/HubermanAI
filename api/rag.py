@@ -224,5 +224,5 @@ def main():
     print(f"HISTORY_ANSWER:\n{history_output_2['answer']}\n\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

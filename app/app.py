@@ -79,10 +79,10 @@ if prompt := st.chat_input("Query:"):
         if response:
             st.session_state.session_id = response.get('session_id')
             st.session_state.chat_history.append([{"role": "user", "content": prompt},
-                                                  {"role": "assistant", "content": response['answer']}])
+                                                  {"role": "assistant", "content": response["answer"]}])
             
             with st.chat_message("assistant", avatar="🤖"):
-                st.markdown(response['answer'])
+                st.markdown(response["answer"])
 
                 if response["docs"]:
                     st.write("Check out more information in following segments:")

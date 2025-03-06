@@ -57,19 +57,19 @@ def docs2str(docs):
     
 # indexing
 def create_docs(json_path):
-    with open(json_path, 'r', encoding='utf-8') as f:
+    with open(json_path, "r", encoding = "utf-8") as f:
         data = [json.loads(line) for line in f]
         
     docs = []
     for item in data:
         doc = Document(
-            page_content=item['context'],
-            metadata={'video_id': item['video_id'], 
-                    'video_title': item['video_title'], 
-                    'video_header': item['video_header'],
-                    'segment_idx': item['segment_idx'],
-                    'time_start': item['time_start'],
-                    'time_end': item['time_end']},
+            page_content=item["context"],
+            metadata={"video_id": item["video_id"], 
+                    "video_title": item["video_title"], 
+                    "video_header": item["video_header"],
+                    "segment_idx": item["segment_idx"],
+                    "time_start": item["time_start"],
+                    "time_end": item["time_end"]},
             )
         docs.append(doc)
     return docs # len: 6165
