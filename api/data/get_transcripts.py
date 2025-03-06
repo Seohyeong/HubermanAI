@@ -75,7 +75,7 @@ def main():
                         help='channel id of a youtube channel')
     parser.add_argument('--wait_time', type=int, default=30)
     parser.add_argument('--sleep_time', type=int, default=10)
-    parser.add_argument('--output_file_path', type=str, default='/Users/seohyeong/Projects/HubermanAI/api/data/raw_data.json')
+    parser.add_argument('--output_file_path', type=str, default='raw_data.json')
     
     args = parser.parse_args()
     
