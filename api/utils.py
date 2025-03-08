@@ -44,6 +44,14 @@ QA_SYSTEM_PROMPT = (
     "Format the response properly, using paragraphs for better readability. Use bold text and bullet points where necessary, but avoid excessive markdown formatting."
 )
 
+# answer for non relevant query
+IRRELEVANT_MESSAGE = (
+    "I'm here to answer questions related to science-based tools for everyday life, as discussed in Andrew Huberman's podcast. " 
+    "Topics include brain health, sleep, fitness, supplementation, mental health, and more. "
+    "However, I couldn't find any relevant supporting documents to answer your question. "
+    "If you have a question in these areas, feel free to ask!"
+)
+
 
 # prompt formatting
 def docs2str(docs):
@@ -96,7 +104,7 @@ class RAGDoc(BaseModel):
     
 class RAGOutput(BaseModel):
     answer: str = Field(default=None)
-    docs: list[RAGDoc]
+    docs: list[RAGDoc] = Field(default=[])
     
 class QueryInput(BaseModel):
     session_id: str = Field(default=None)
@@ -106,4 +114,4 @@ class QueryInput(BaseModel):
 class QueryOutput(BaseModel):
     session_id: str
     answer: str
-    docs: list[RAGDoc]
+    docs: list[RAGDoc] = Field(default=[])

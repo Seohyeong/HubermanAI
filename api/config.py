@@ -23,7 +23,9 @@ class Config:
     
     # retriever
     top_k: int = 3
-    search_type: str = "similarity"
+    score_threshold: float = 0.5
+    search_type: str = "similarity_score_threshold" # "similarity"
+    
     
     @classmethod
     def openai(cls):

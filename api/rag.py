@@ -17,7 +17,7 @@ from langchain_cohere import ChatCohere
 # rsc
 from config import get_config
 from utils import create_docs, docs2str, get_rr, RAGDoc, RAGOutput, \
-    CHAT_PROMPT, QA_SYSTEM_PROMPT, CONTEXTUALIZE_Q_SYSTEM_PROMPT
+    CHAT_PROMPT, QA_SYSTEM_PROMPT, CONTEXTUALIZE_Q_SYSTEM_PROMPT, IRRELEVANT_MESSAGE
 
 
 def _init_config(llm_model_name):
@@ -101,7 +101,7 @@ class RagChatbot():
         self.embedding_function, self.llm = self._init_models()
         self.vectorstore = self._init_db()
         self.retriever = self.vectorstore.as_retriever(search_type=self.config.search_type, 
-                                                       search_kwargs={"k": self.config.top_k})
+                                                       search_kwargs={"score_threshold": self.config.score_threshold})
         
         self.prompt = ChatPromptTemplate.from_template(CHAT_PROMPT)
         
@@ -170,31 +170,36 @@ class RagChatbot():
         
     def invoke(self, query):
         docs = self.retriever.invoke(query)
-        docs = self._validate_docs(docs)
-        context = docs2str(docs)
-        llm_response = self.llm.invoke(self.prompt.format(context=context, question=query))
-        
-        return RAGOutput(answer=llm_response.content,
-                         docs=[RAGDoc(video_id=doc.metadata.get("video_id"),
-                                        title=doc.metadata.get("video_title"),
-                                        header=doc.metadata.get("video_header"),
-                                        time_start=doc.metadata.get("time_start"),
-                                        time_end=doc.metadata.get("time_end"),
-                                        segment_idx=doc.metadata.get("segment_idx"))
-                                for doc in docs])
-        
+        if not docs:
+            return RAGOutput(answer=IRRELEVANT_MESSAGE)
+        else:
+            docs = self._validate_docs(docs)
+            context = docs2str(docs)
+            llm_response = self.llm.invoke(self.prompt.format(context=context, question=query))
+            
+            return RAGOutput(answer=llm_response.content,
+                            docs=[RAGDoc(video_id=doc.metadata.get("video_id"),
+                                            title=doc.metadata.get("video_title"),
+                                            header=doc.metadata.get("video_header"),
+                                            time_start=doc.metadata.get("time_start"),
+                                            time_end=doc.metadata.get("time_end"),
+                                            segment_idx=doc.metadata.get("segment_idx"))
+                                    for doc in docs])
+            
     def invoke_with_history(self, query, chat_history):
         llm_response = self.rag_chain.invoke({"input": query, "chat_history": chat_history})
         docs = self._validate_docs(llm_response["context"])
-        
-        return RAGOutput(answer=llm_response["answer"],
-                         docs=[RAGDoc(video_id=doc.metadata.get("video_id"),
-                                        title=doc.metadata.get("video_title"),
-                                        header=doc.metadata.get("video_header"),
-                                        time_start=doc.metadata.get("time_start"),
-                                        time_end=doc.metadata.get("time_end"),
-                                        segment_idx=doc.metadata.get("segment_idx"))
-                                for doc in docs])
+        if not docs:
+            return RAGOutput(answer=IRRELEVANT_MESSAGE)
+        else:
+            return RAGOutput(answer=llm_response["answer"],
+                            docs=[RAGDoc(video_id=doc.metadata.get("video_id"),
+                                            title=doc.metadata.get("video_title"),
+                                            header=doc.metadata.get("video_header"),
+                                            time_start=doc.metadata.get("time_start"),
+                                            time_end=doc.metadata.get("time_end"),
+                                            segment_idx=doc.metadata.get("segment_idx"))
+                                    for doc in docs])
 
 
 def test_with_chat_history(rag_chain):
