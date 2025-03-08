@@ -48,7 +48,7 @@ QA_SYSTEM_PROMPT = (
 IRRELEVANT_MESSAGE = (
     "I'm here to answer questions related to science-based tools for everyday life, as discussed in Andrew Huberman's podcast. " 
     "Topics include brain health, sleep, fitness, supplementation, mental health, and more. "
-    "However, I couldn't find any relevant supporting documents to answer your question. "
+    "However, I couldn't find any relevant supporting documents to answer your question.\n"
     "If you have a question in these areas, feel free to ask!"
 )
 

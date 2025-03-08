@@ -14,8 +14,12 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
 from langchain_cohere import ChatCohere
 
+# nemoguardrails
+# from nemoguardrails import RailsConfig
+# from nemoguardrails.integrations.langchain.runnable_rails import RunnableRails
+
 # rsc
-from config import get_config
+from config.rag_config import get_config
 from utils import create_docs, docs2str, get_rr, RAGDoc, RAGOutput, \
     CHAT_PROMPT, QA_SYSTEM_PROMPT, CONTEXTUALIZE_Q_SYSTEM_PROMPT, IRRELEVANT_MESSAGE
 
@@ -39,6 +43,7 @@ def _init_config(llm_model_name):
         config.qna_test_data_path = os.path.join(project_dir, config.qna_test_data_path)
         config.syn_test_data_path = os.path.join(project_dir, config.syn_test_data_path)
         config.unrelated_questions_path = os.path.join(project_dir, config.unrelated_questions_path)
+        config.guardrails_config_path = os.path.join(project_dir, config.guardrails_config_path)
 
     project_dir = str(Path(__file__).resolve().parent.parent)
     resolve_path(config, project_dir)
@@ -118,8 +123,11 @@ class RagChatbot():
              MessagesPlaceholder("chat_history"),
              ("human", "{input}")])
         self.question_answer_chain = create_stuff_documents_chain(self.llm, self.qa_prompt)
+
+        # self.guardrails = RunnableRails(RailsConfig.from_path(self.config.guardrails_config_path))
         self.rag_chain = create_retrieval_chain(self.history_aware_retriever, self.question_answer_chain)
-    
+        # self.pipeline = self.guardrails | self.rag_chain
+
     def _init_config(self, llm_model_name):
         return _init_config(llm_model_name)
     
@@ -188,7 +196,8 @@ class RagChatbot():
             
     def invoke_with_history(self, query, chat_history):
         llm_response = self.rag_chain.invoke({"input": query, "chat_history": chat_history})
-        docs = self._validate_docs(llm_response["context"])
+        if "context" in llm_response.keys():
+            docs = self._validate_docs(llm_response["context"])
         if not docs:
             return RAGOutput(answer=IRRELEVANT_MESSAGE)
         else:
@@ -212,20 +221,20 @@ def test_with_chat_history(rag_chain):
 
     print(f"QUESTION:\n{q1}\n")
     simple_output_1 = rag_chain.invoke(q1)
-    print(f"SIMPLE_ANSWER:\n{simple_output_1['answer']}\n")
+    print(f"SIMPLE_ANSWER:\n{simple_output_1.answer}\n")
     history_output_1 = rag_chain.invoke_with_history(q1, chat_history)
-    print(f"HISTORY_ANSWER:\n{history_output_1['answer']}\n\n")
+    print(f"HISTORY_ANSWER:\n{history_output_1.answer}\n\n")
     
     chat_history.extend([
         HumanMessage(content=q1),
-        AIMessage(content=history_output_1["answer"])
+        AIMessage(content=history_output_1.answer)
     ])
     
     print(f"QUESTION:\n{q2}\n")
     simple_output_2 = rag_chain.invoke(q2)
-    print(f"SIMPLE_ANSWER:\n{simple_output_2['answer']}\n")
+    print(f"SIMPLE_ANSWER:\n{simple_output_2.answer}\n")
     history_output_2 = rag_chain.invoke_with_history(q2, chat_history)
-    print(f"HISTORY_ANSWER:\n{history_output_2['answer']}\n\n")
+    print(f"HISTORY_ANSWER:\n{history_output_2.answer}\n\n")
     
     
 def test_retriever(rag_chain, k):
@@ -282,7 +291,7 @@ def test_retriever(rag_chain, k):
 def main():
     rag_chain = RagChatbot("cohere")
     
-    # test_with_chat_history(rag_chain)
+    test_with_chat_history(rag_chain)
     test_retriever(rag_chain, k=3)
 
 if __name__ == "__main__":

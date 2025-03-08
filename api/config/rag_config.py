@@ -21,6 +21,9 @@ class Config:
     qna_test_data_path: str = "api/data/qna_test.json"
     unrelated_questions_path: str = "api/data/unrelated_questions.json"
     
+    # nemo guardrails
+    guardrails_config_path: str = "api/config/guardrails_config"
+    
     # retriever
     top_k: int = 3
     score_threshold: float = 0.5
