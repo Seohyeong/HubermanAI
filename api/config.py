@@ -19,6 +19,7 @@ class Config:
     train_data_path: str = "api/data/train.json"
     syn_test_data_path: str = "api/data/syn_test.json"
     qna_test_data_path: str = "api/data/qna_test.json"
+    unrelated_questions_path: str = "api/data/unrelated_questions.json"
     
     # retriever
     top_k: int = 3
