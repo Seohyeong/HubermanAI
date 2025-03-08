@@ -75,6 +75,15 @@ def create_docs(json_path):
     return docs # len: 6165
 
 
+# evaluating
+def get_rr(gt_doc_id: str, pred_doc_ids: list[str]) -> float:
+    rr= 0
+    try:
+        rr = 1 / (pred_doc_ids.index(gt_doc_id) + 1)
+    except ValueError:
+        rr = 0
+    return rr
+
 # pydantic
 class RAGDoc(BaseModel):
     video_id: str

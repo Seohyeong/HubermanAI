@@ -16,7 +16,7 @@ from langchain_cohere import ChatCohere
 
 # rsc
 from config import get_config
-from utils import create_docs, docs2str, RAGDoc, RAGOutput, \
+from utils import create_docs, docs2str, get_rr, RAGDoc, RAGOutput, \
     CHAT_PROMPT, QA_SYSTEM_PROMPT, CONTEXTUALIZE_Q_SYSTEM_PROMPT
 
 
@@ -38,6 +38,7 @@ def _init_config(llm_model_name):
         config.train_data_path = os.path.join(project_dir, config.train_data_path)
         config.qna_test_data_path = os.path.join(project_dir, config.qna_test_data_path)
         config.syn_test_data_path = os.path.join(project_dir, config.syn_test_data_path)
+        config.unrelated_questions_path = os.path.join(project_dir, config.unrelated_questions_path)
 
     project_dir = str(Path(__file__).resolve().parent.parent)
     resolve_path(config, project_dir)
@@ -118,8 +119,7 @@ class RagChatbot():
              ("human", "{input}")])
         self.question_answer_chain = create_stuff_documents_chain(self.llm, self.qa_prompt)
         self.rag_chain = create_retrieval_chain(self.history_aware_retriever, self.question_answer_chain)
-        
-        
+    
     def _init_config(self, llm_model_name):
         return _init_config(llm_model_name)
     
@@ -157,16 +157,16 @@ class RagChatbot():
                 doc_ids.add(doc.id)
         return new_docs
     
-    def retrieve(self, query):
-        docs = self.retriever.invoke(query) # TODO: check for unique id
+    def retrieve(self, query, k):
+        docs, scores = zip(*self.vectorstore.similarity_search_with_score(query, k=k))
         return RAGOutput(docs=[RAGDoc(video_id=doc.metadata.get("video_id"),
                                         title=doc.metadata.get("video_title"),
                                         header=doc.metadata.get("video_header"),
                                         time_start=doc.metadata.get("time_start"),
                                         time_end=doc.metadata.get("time_end"),
                                         segment_idx=doc.metadata.get("segment_idx"),
-                                        score=0.0) # TODO
-                                for doc in docs])
+                                        score=score)
+                                for doc, score in zip(docs, scores)])
         
     def invoke(self, query):
         docs = self.retriever.invoke(query)
@@ -180,8 +180,7 @@ class RagChatbot():
                                         header=doc.metadata.get("video_header"),
                                         time_start=doc.metadata.get("time_start"),
                                         time_end=doc.metadata.get("time_end"),
-                                        segment_idx=doc.metadata.get("segment_idx"),
-                                        score=0.0) # TODO
+                                        segment_idx=doc.metadata.get("segment_idx"))
                                 for doc in docs])
         
     def invoke_with_history(self, query, chat_history):
@@ -194,8 +193,7 @@ class RagChatbot():
                                         header=doc.metadata.get("video_header"),
                                         time_start=doc.metadata.get("time_start"),
                                         time_end=doc.metadata.get("time_end"),
-                                        segment_idx=doc.metadata.get("segment_idx"),
-                                        score=0.0) # TODO
+                                        segment_idx=doc.metadata.get("segment_idx"))
                                 for doc in docs])
 
 
@@ -225,11 +223,62 @@ def test_with_chat_history(rag_chain):
     print(f"HISTORY_ANSWER:\n{history_output_2['answer']}\n\n")
     
     
+def test_retriever(rag_chain, k):
+    import json
+    import pandas as pd
+    """ checking two things
+    - score distribution for relevant questions (syn_test_data, qna_test_data)
+    - recall, mrr (syn_test_data)
+    """
+    scores = []
+    with open(rag_chain.config.syn_test_data_path, "r", encoding = "utf-8") as f:
+        syn_data = [json.loads(line) for line in f]
+    with open(rag_chain.config.qna_test_data_path, "r", encoding = "utf-8") as f:
+        qna_data = [json.loads(line) for line in f]
+        
+    scores_unrelated = []
+    with open(rag_chain.config.unrelated_questions_path, "r", encoding = "utf-8") as f:
+        unrelated_questions = [json.loads(line) for line in f]
+        
+    mrr = 0
+    recall = 0
+    for item in syn_data:
+        output = rag_chain.retrieve(item["question"], k)
+        retrieved_docs = output.docs
+        gt_doc_id = item["doc_id"]
+        pred_doc_ids = []
+        for doc in retrieved_docs:
+            scores.append(doc.score)
+            doc_id = doc.video_id + "_" + doc.segment_idx
+            pred_doc_ids.append(doc_id)
+        if gt_doc_id in pred_doc_ids:
+            recall += 1
+        rr = get_rr(gt_doc_id, pred_doc_ids)
+        mrr += rr
+    mrr = mrr / len(syn_data)
+    recall = recall / len(syn_data)
+        
+    for item in qna_data:
+        output = rag_chain.retrieve(item["question"], k)
+        retrieved_docs = output.docs
+        for doc in retrieved_docs:
+            scores.append(doc.score)
+            
+    for item in unrelated_questions:
+        output = rag_chain.retrieve(item["question"], k)
+        retrieved_docs = output.docs
+        for doc in retrieved_docs:
+            scores_unrelated.append(doc.score)
+    
+    print("RECALL: {}\nMRR: {}\nSUMMARY(RELATED):\n{}\nSUMMARY(UNRELATED):\n{}".format(
+        recall, mrr, pd.Series(scores).describe(), pd.Series(scores_unrelated).describe()))
+    
+    
 def main():
     rag_chain = RagChatbot("cohere")
     
-    test_with_chat_history(rag_chain)
-
+    # test_with_chat_history(rag_chain)
+    test_retriever(rag_chain, k=5)
 
 if __name__ == "__main__":
     main()
