@@ -158,7 +158,7 @@ class RagChatbot():
         return new_docs
     
     def retrieve(self, query, k):
-        docs, scores = zip(*self.vectorstore.similarity_search_with_score(query, k=k))
+        docs, scores = zip(*self.vectorstore.similarity_search_with_relevance_scores(query, k=k))
         return RAGOutput(docs=[RAGDoc(video_id=doc.metadata.get("video_id"),
                                         title=doc.metadata.get("video_title"),
                                         header=doc.metadata.get("video_header"),
@@ -278,7 +278,7 @@ def main():
     rag_chain = RagChatbot("cohere")
     
     # test_with_chat_history(rag_chain)
-    test_retriever(rag_chain, k=5)
+    test_retriever(rag_chain, k=3)
 
 if __name__ == "__main__":
     main()
