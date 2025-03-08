@@ -16,7 +16,7 @@ from langchain_cohere import ChatCohere
 
 # rsc
 from config import get_config
-from utils import create_docs, docs2str, \
+from utils import create_docs, docs2str, RAGDoc, RAGOutput, \
     CHAT_PROMPT, QA_SYSTEM_PROMPT, CONTEXTUALIZE_Q_SYSTEM_PROMPT
 
 
@@ -157,49 +157,50 @@ class RagChatbot():
                 doc_ids.add(doc.id)
         return new_docs
     
+    def retrieve(self, query):
+        docs = self.retriever.invoke(query) # TODO: check for unique id
+        return RAGOutput(docs=[RAGDoc(video_id=doc.metadata.get("video_id"),
+                                        title=doc.metadata.get("video_title"),
+                                        header=doc.metadata.get("video_header"),
+                                        time_start=doc.metadata.get("time_start"),
+                                        time_end=doc.metadata.get("time_end"),
+                                        segment_idx=doc.metadata.get("segment_idx"),
+                                        score=0.0) # TODO
+                                for doc in docs])
+        
     def invoke(self, query):
         docs = self.retriever.invoke(query)
         docs = self._validate_docs(docs)
         context = docs2str(docs)
         llm_response = self.llm.invoke(self.prompt.format(context=context, question=query))
         
-        return {
-            "answer": llm_response.content,
-            "docs": [
-                {   
-                    "video_id": doc.metadata.get("video_id"),
-                    "title": doc.metadata.get("video_title"),
-                    "header": doc.metadata.get("video_header"),
-                    "time_start": doc.metadata.get("time_start"),
-                    "time_end": doc.metadata.get("time_end")
-                }
-                for doc in docs
-            ]
-        }
+        return RAGOutput(answer=llm_response.content,
+                         docs=[RAGDoc(video_id=doc.metadata.get("video_id"),
+                                        title=doc.metadata.get("video_title"),
+                                        header=doc.metadata.get("video_header"),
+                                        time_start=doc.metadata.get("time_start"),
+                                        time_end=doc.metadata.get("time_end"),
+                                        segment_idx=doc.metadata.get("segment_idx"),
+                                        score=0.0) # TODO
+                                for doc in docs])
         
     def invoke_with_history(self, query, chat_history):
         llm_response = self.rag_chain.invoke({"input": query, "chat_history": chat_history})
         docs = self._validate_docs(llm_response["context"])
         
-        return {
-            "answer": llm_response["answer"],
-            "docs": [
-                {   
-                    "video_id": doc.metadata.get("video_id"),
-                    "title": doc.metadata.get("video_title"),
-                    "header": doc.metadata.get("video_header"),
-                    "time_start": doc.metadata.get("time_start"),
-                    "time_end": doc.metadata.get("time_end")
-                }
-                for doc in docs
-            ]
-        } 
+        return RAGOutput(answer=llm_response["answer"],
+                         docs=[RAGDoc(video_id=doc.metadata.get("video_id"),
+                                        title=doc.metadata.get("video_title"),
+                                        header=doc.metadata.get("video_header"),
+                                        time_start=doc.metadata.get("time_start"),
+                                        time_end=doc.metadata.get("time_end"),
+                                        segment_idx=doc.metadata.get("segment_idx"),
+                                        score=0.0) # TODO
+                                for doc in docs])
 
 
-def main():
+def test_with_chat_history(rag_chain):
     from langchain_core.messages import HumanMessage, AIMessage
-    
-    rag_chain = RagChatbot("cohere")
     
     q1 = "Is chemical sunscreen bad for you?"
     q2 = "Where can I find it?"
@@ -222,6 +223,12 @@ def main():
     print(f"SIMPLE_ANSWER:\n{simple_output_2['answer']}\n")
     history_output_2 = rag_chain.invoke_with_history(q2, chat_history)
     print(f"HISTORY_ANSWER:\n{history_output_2['answer']}\n\n")
+    
+    
+def main():
+    rag_chain = RagChatbot("cohere")
+    
+    test_with_chat_history(rag_chain)
 
 
 if __name__ == "__main__":

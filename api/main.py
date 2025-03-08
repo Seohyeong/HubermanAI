@@ -22,9 +22,9 @@ def chat(query_input: QueryInput):
     
     # chat_history = history_db.get_chat_history(session_id)
     llm_output = rag_chain.invoke_with_history(query_input.question, query_input.chat_history)
-    answer = llm_output['answer']
+    answer = llm_output.answer
     
     # history_db.insert_history_db(session_id, query_input.question, answer)
     logging.info(f"Session ID: {session_id}, AI Response: {answer}")
     
-    return QueryOutput(session_id=session_id, answer=answer, docs=llm_output["docs"])
+    return QueryOutput(session_id=session_id, answer=answer, docs=llm_output.docs)

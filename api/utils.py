@@ -76,6 +76,19 @@ def create_docs(json_path):
 
 
 # pydantic
+class RAGDoc(BaseModel):
+    video_id: str
+    title: str
+    header: str
+    time_start: str
+    time_end : str
+    segment_idx: str = Field(default=None)
+    score: float = Field(default=None)
+    
+class RAGOutput(BaseModel):
+    answer: str = Field(default=None)
+    docs: list[RAGDoc]
+    
 class QueryInput(BaseModel):
     session_id: str = Field(default=None)
     question: str
@@ -84,4 +97,4 @@ class QueryInput(BaseModel):
 class QueryOutput(BaseModel):
     session_id: str
     answer: str
-    docs: list
+    docs: list[RAGDoc]
