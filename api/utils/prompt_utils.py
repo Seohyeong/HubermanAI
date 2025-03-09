@@ -1,13 +1,42 @@
-import json
-from langchain_core.documents import Document
-from pydantic import BaseModel, Field
-
+# prompt formatting
+def docs2str(docs):
+    return "\n\n".join(
+        f"title: {doc.metadata['video_title']}\n"
+        f"header: {doc.metadata['video_header']}\n"
+        f"content: {doc.page_content}"
+        for doc in docs
+    )
+    
 # generating test set
 SYSTEM_PROMPT = """
 You are a helpful AI assistant for creating a Question and Answering dataset.
 Given the CONTEXT and its HEADER,  generate a question that general people might ask, which can be answered using the CONTEXT.
 Output ONLY the question.
 """
+
+# query validation prompt
+QUERY_VALIDATION_PROMPT = (
+    "Validate the given QUERY based on the following rules:\n"
+    "If the QUERY is irrelevant, output FALSE.\n"
+    "If the QUERY is relevant, output TRUE.\n\n"
+    "A QUERY is relevant if it pertains to Andrew Huberman's podcast, which provides science-based tools for everyday life, including topics such as:\n"
+    "Brain health\n"
+    "Sleep and sleep hygiene\n"
+    "Fitness\n"
+    "Supplementation\n"
+    "Mental health\n"
+    "Cold plunges\n"
+    "Light and sun exposure\n"
+    "Skin care\n"
+    "Hormones\n\n"
+    "A QUERY is irrelevant if it does not relate to these topics or falls under the following categories:\n"
+    "Politics\n"
+    "Illegal activities\n"
+    "Self-harm\n\n" 
+    "Output either TRUE or FALSE.\n"
+    "QUERY: {query}\n"
+    "Answer: "
+)
 
 # vanilla llm invoke prompt
 CHAT_PROMPT = (
@@ -32,7 +61,7 @@ CONTEXTUALIZE_Q_SYSTEM_PROMPT = (
 )
 
 # history aware QA prompt
-QA_SYSTEM_PROMPT = (
+HISTORY_AWARE_CHAT_PROMPT = (
     "Context information is below.\n"
     "---------------------\n"
     "{context}\n"
@@ -45,73 +74,25 @@ QA_SYSTEM_PROMPT = (
 )
 
 # answer for non relevant query
-IRRELEVANT_MESSAGE = (
+IRRELEVANT_MESSAGE_PROMPT = (
     "I'm here to answer questions related to science-based tools for everyday life, as discussed in Andrew Huberman's podcast. " 
     "Topics include brain health, sleep, fitness, supplementation, mental health, and more. "
     "However, I couldn't find any relevant supporting documents to answer your question.\n"
     "If you have a question in these areas, feel free to ask!"
 )
 
+# relevant, irrelevant training set generation
+Q_AZER_PROMPT =(
+    """
+    I'm training an embedding model to tell whether a user query is relevant to the RAG system I'm building. 
+    My RAG system is built on Andrew Huberman's podcast, which provides science-based tools for everyday life, including topics such as Brain health, Sleep and sleep hygiene, Fitness, Supplementation, Mental health, Light and Sun exposure, Skin care, Hormones, etc. 
+    I want you to create 500 relevant questions and 500 irrelevant questions. Make sure to generate questions that a general user might ask. 
 
-# prompt formatting
-def docs2str(docs):
-    return "\n\n".join(
-        f"title: {doc.metadata['video_title']}\n"
-        f"header: {doc.metadata['video_header']}\n"
-        f"content: {doc.page_content}"
-        for doc in docs
-    )
-    
-    
-# indexing
-def create_docs(json_path):
-    with open(json_path, "r", encoding = "utf-8") as f:
-        data = [json.loads(line) for line in f]
-        
-    docs = []
-    for item in data:
-        doc = Document(
-            page_content=item["context"],
-            metadata={"video_id": item["video_id"], 
-                    "video_title": item["video_title"], 
-                    "video_header": item["video_header"],
-                    "segment_idx": item["segment_idx"],
-                    "time_start": item["time_start"],
-                    "time_end": item["time_end"]},
-            )
-        docs.append(doc)
-    return docs # len: 6165
+    Give 2 json files, with each for relevant questions and irrelevant questions. Use the following format:
 
-
-# evaluating
-def get_rr(gt_doc_id: str, pred_doc_ids: list[str]) -> float:
-    rr= 0
-    try:
-        rr = 1 / (pred_doc_ids.index(gt_doc_id) + 1)
-    except ValueError:
-        rr = 0
-    return rr
-
-# pydantic
-class RAGDoc(BaseModel):
-    video_id: str
-    title: str
-    header: str
-    time_start: str
-    time_end : str
-    segment_idx: str = Field(default=None)
-    score: float = Field(default=None)
-    
-class RAGOutput(BaseModel):
-    answer: str = Field(default=None)
-    docs: list[RAGDoc] = Field(default=[])
-    
-class QueryInput(BaseModel):
-    session_id: str = Field(default=None)
-    question: str
-    chat_history: list = Field(default=[])
-
-class QueryOutput(BaseModel):
-    session_id: str
-    answer: str
-    docs: list[RAGDoc] = Field(default=[])
+    {"question": "How do I play the guitar?"}
+    {"question": "What’s the best way to make friends?"}
+    {"question": "How do I become a stand-up comedian?"}
+    ...
+    """
+)

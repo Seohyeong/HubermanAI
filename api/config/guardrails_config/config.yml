@@ -1,4 +1,0 @@
-models:
-  - type: main
-    engine: cohere
-    model: command-r-plus-08-2024

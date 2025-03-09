@@ -19,7 +19,8 @@ class Config:
     train_data_path: str = "api/data/train.json"
     syn_test_data_path: str = "api/data/syn_test.json"
     qna_test_data_path: str = "api/data/qna_test.json"
-    unrelated_questions_path: str = "api/data/unrelated_questions.json"
+    relevant_qs_path: str = "api/data/relevant_qs.json"
+    irrelevant_qs_path: str = "api/data/irrelevant_qs.json"
     
     # nemo guardrails
     guardrails_config_path: str = "api/config/guardrails_config"
@@ -36,6 +37,7 @@ class Config:
         
     @classmethod
     def cohere(cls):
+        # command-r7b-12-2024
         return cls(generation_model = "command-r-plus-08-2024")
     
     @classmethod

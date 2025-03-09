@@ -2,14 +2,14 @@ from fastapi import FastAPI
 import uuid
 import logging
 
-from utils import QueryInput, QueryOutput
-from rag import RagChatbot, HistoryDB
+from api.utils.utils import QueryInput, QueryOutput
+from rag import RagChatbot
 
 logging.basicConfig(filename="app.log", level=logging.INFO)
 
 app = FastAPI()
 rag_chain = RagChatbot("cohere")
-# history_db = HistoryDB("cohere")
+
 
 @app.post("/chat", response_model=QueryOutput)
 def chat(query_input: QueryInput):
@@ -20,11 +20,9 @@ def chat(query_input: QueryInput):
     if not session_id:
         session_id = str(uuid.uuid4())
     
-    # chat_history = history_db.get_chat_history(session_id)
     llm_output = rag_chain.invoke_with_history(query_input.question, query_input.chat_history)
     answer = llm_output.answer
     
-    # history_db.insert_history_db(session_id, query_input.question, answer)
     logging.info(f"Session ID: {session_id}, AI Response: {answer}")
     
     return QueryOutput(session_id=session_id, answer=answer, docs=llm_output.docs)

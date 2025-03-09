@@ -31,7 +31,7 @@ def display_answer(answer):
     st.markdown(answer)
     
 def display_expander(videos):
-    with st.expander("Check out following episodes"):
+    with st.expander("Sources and related videos"):
         for video in videos:
             col_video, col_meta = st.columns([1.5, 2])
             
