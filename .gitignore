@@ -3,10 +3,11 @@
 __pycache__
 
 TODO.txt
+run.sh
 
 logs/
 api/app.log
 
 history_db.db
-chroma_db/
-# api/data/*.json
+chroma_db*
+mlruns/
