@@ -1,5 +1,6 @@
 import json
 import pandas as pd
+from tqdm import tqdm
 import mlflow
     
 
@@ -13,7 +14,7 @@ def get_rr(gt_doc_id: str, pred_doc_ids: list[str]) -> float:
 
 def get_mrr(data, rag_chain, k) -> float:
     mrr = 0
-    for item in data:
+    for item in tqdm(data, total=len(data)):
         output = rag_chain.retrieve(item["question"], k)
         retrieved_docs = output.docs
         gt_doc_id = item["doc_id"]
@@ -28,7 +29,7 @@ def get_mrr(data, rag_chain, k) -> float:
 
 def get_recall(data, rag_chain, k) -> float:
     recall = 0
-    for item in data:
+    for item in tqdm(data, total=len(data)):
         output = rag_chain.retrieve(item["question"], k)
         retrieved_docs = output.docs
         gt_doc_id = item["doc_id"]
@@ -43,7 +44,7 @@ def get_recall(data, rag_chain, k) -> float:
 
 def get_score_dist(data, rag_chain, k) -> list[float]:
     scores = []
-    for item in data:
+    for item in tqdm(data, total=len(data)):
         output = rag_chain.retrieve(item["question"], k)
         retrieved_docs = output.docs
         pred_doc_ids = []
@@ -115,8 +116,8 @@ def test_retriever(rag_chain, k, threshold):
         accuracy = (tp + tn) / (tp + tn + fp + fn) if (tp + tn + fp + fn) > 0 else 0
 
         # Log metrics to MLflow
-        mlflow.log_metric(f"mrr@{k}", syn_data_mrr)
-        mlflow.log_metric(f"recall@{k}", syn_data_recall)
+        mlflow.log_metric(f"mrr_{k}", syn_data_mrr)
+        mlflow.log_metric(f"recall_{k}", syn_data_recall)
         mlflow.log_metric("true_positives", tp)
         mlflow.log_metric("true_negatives", tn)
         mlflow.log_metric("false_positives", fp)
@@ -132,9 +133,13 @@ def test_retriever(rag_chain, k, threshold):
         irrel_stats = pd.Series(irrel_data_scores).describe()
         
         for stat in ['mean', 'std', 'min', '25%', '50%', '75%', 'max']:
-            mlflow.log_metric(f"qna_scores_{stat}", qna_stats[stat])
-            mlflow.log_metric(f"relevant_scores_{stat}", rel_stats[stat])
-            mlflow.log_metric(f"irrelevant_scores_{stat}", irrel_stats[stat])
+            if '%' in stat:
+                mlflow_stat = stat.strip('%')
+            else:
+                mlflow_stat = stat
+            mlflow.log_metric(f"qna_scores_{mlflow_stat}", qna_stats[stat])
+            mlflow.log_metric(f"relevant_scores_{mlflow_stat}", rel_stats[stat])
+            mlflow.log_metric(f"irrelevant_scores_{mlflow_stat}", irrel_stats[stat])
         
         print(
             f"RECALL: {syn_data_mrr}\n"
