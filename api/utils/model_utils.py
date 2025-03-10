@@ -23,13 +23,13 @@ class ChatOpenRouter(ChatOpenAI):
                          model_name=model_name, **kwargs)
         
         
-def init_embedding_model(model_name):
+def init_embedding_model(model_name, device):
     load_dotenv()
     os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN")
     
     embedding_model = HuggingFaceEmbeddings(
             model_name=model_name,
-            model_kwargs={'device': 'cuda'},
+            model_kwargs={'device': device},
             encode_kwargs={'normalize_embeddings': False}
             )
     return embedding_model

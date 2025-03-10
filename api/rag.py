@@ -25,7 +25,7 @@ class RagChatbot():
     def __init__(self, llm_model_name):
         self.llm_model_name = llm_model_name
         self.config = init_config(self.llm_model_name)
-        self.embedding_function = init_embedding_model(self.config.embedding_model)
+        self.embedding_function = init_embedding_model(self.config.embedding_model, self.config.device)
         self.llm = init_llm_model(self.llm_model_name, self.config.generation_model)
         self.vectorstore = init_db(self.config, self.embedding_function)
         

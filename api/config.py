@@ -4,6 +4,9 @@ from dataclasses import dataclass, asdict
 class Config:
     name: str = "rag_config"
     
+    # device
+    device: str = "cpu" # "gpu"
+    
     # model
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     generation_model: str = "gpt-3.5-turbo"
