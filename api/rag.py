@@ -6,7 +6,6 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 
 # mlflow
 import mlflow
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
 
 # utils
 from utils.db_utils import init_db
@@ -17,6 +16,7 @@ from utils.prompt_utils import docs2str, \
     IRRELEVANT_MESSAGE_PROMPT
 from utils.eval_utils import test_retriever
 from utils.utils import init_config, validate_docs, \
+    start_mlflow_server, stop_mlflow_server, \
     RAGDoc, RAGOutput
 
 
@@ -130,8 +130,15 @@ def test_with_chat_history(rag_chain):
 def main():
     rag_chain = RagChatbot("cohere")
     
+    # set mlflow
+    mlflow_process = start_mlflow_server(rag_chain.config.host, rag_chain.config.port)
+    mlflow.set_tracking_uri(f"http://{rag_chain.config.host}:{rag_chain.config.port}")
+    
     # test_with_chat_history(rag_chain)
     test_retriever(rag_chain, k=3, threshold=0.5)
+    
+    # terminate mlflow
+    stop_mlflow_server(mlflow_process)
 
 if __name__ == "__main__":
     main()

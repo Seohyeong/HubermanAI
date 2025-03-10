@@ -1,9 +1,12 @@
 import os
 from pathlib import Path
 from pydantic import BaseModel, Field
+import subprocess
 
 from config import get_config
 
+
+# init config
 def init_config(llm_model_name):
     config = get_config(llm_model_name)
     os.environ["LANGCHAIN_TRACING"] = os.getenv("LANGSMITH_TRACING")
@@ -22,7 +25,25 @@ def init_config(llm_model_name):
     project_dir = str(Path(__file__).resolve().parent.parent.parent)
     resolve_path(config, project_dir)
     return config
-    
+
+# init mlflow
+def start_mlflow_server(host: str, port: str):
+    try:
+        command = ["mlflow", "server", "--host", host, "--port", str(port)]
+        process = subprocess.Popen(command)
+        print(f"[MLflow server] running on {host}:{port}")
+        return process
+    except Exception as e:
+        print(f"[MLflow server] error occurred : {e}")
+        return None
+
+def stop_mlflow_server(process):
+    if process:
+        process.terminate()
+        process.wait()
+        print("[MLflow server] successfully killed")
+        
+# doc validation (filter out duplicates)
 def validate_docs(docs):
     new_docs = []
     doc_ids = set()

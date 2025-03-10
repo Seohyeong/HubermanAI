@@ -8,6 +8,10 @@ class Config:
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     generation_model: str = "gpt-3.5-turbo"
     
+    # mlflow
+    host: str = "127.0.0.1"
+    port: str = "8080"
+    
     # db
     db_dir: str = "chroma_db"
     db_collection_name = "huberman"
