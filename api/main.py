@@ -2,7 +2,7 @@ from fastapi import FastAPI
 import uuid
 import logging
 
-from api.utils.utils import QueryInput, QueryOutput
+from utils.utils import QueryInput, QueryOutput
 from rag import RagChatbot
 
 logging.basicConfig(filename="app.log", level=logging.INFO)
