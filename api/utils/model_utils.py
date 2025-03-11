@@ -8,19 +8,15 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
         
 class ChatOpenRouter(ChatOpenAI):
-    openai_api_base: str
-    openai_api_key: str
-    model_name: str
-
     def __init__(self,
-                 model_name: str,
+                 model: str,
                  openai_api_key: Optional[str] = None,
                  openai_api_base: str = "https://openrouter.ai/api/v1",
                  **kwargs):
         openai_api_key = os.getenv("OPENROUTER_API_KEY")
         super().__init__(openai_api_base=openai_api_base,
                          openai_api_key=openai_api_key,
-                         model_name=model_name, **kwargs)
+                         model_name=model, **kwargs)
         
         
 def init_embedding_model(model_name, device):
