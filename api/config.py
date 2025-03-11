@@ -14,10 +14,15 @@ class Config:
     # mlflow
     host: str = "127.0.0.1"
     port: str = "8080"
+    activate_mlflow: bool = False
     
-    # db
-    db_dir: str = "chroma_db"
-    db_collection_name = "huberman"
+    # query db
+    query_db_dir: str = "chroma_db_query"
+    query_db_collection_name = "huberman"
+    
+    # retriever db
+    rag_db_dir: str = "chroma_db_split_docs"
+    rag_db_collection_name = "huberman"
     
     # sqlite3
     history_db = "history_db.db"
@@ -32,10 +37,14 @@ class Config:
     # nemo guardrails
     guardrails_config_path: str = "api/config/guardrails_config"
     
-    # retriever
-    top_k: int = 3
-    score_threshold: float = 0.5
-    search_type: str = "similarity_score_threshold" # "similarity"
+    # query retriever
+    qr_top_k: int = 10
+    qr_search_type: str = "similarity"
+    
+    # rag retriever
+    rr_top_k: int = 3
+    rr_score_threshold: float = 0.6
+    rr_search_type: str = "similarity_score_threshold"
     
     
     @classmethod
@@ -50,6 +59,10 @@ class Config:
     @classmethod
     def llama(cls):
         return cls(generation_model = "meta-llama/Llama-3.2-3B-Instruct")
+    
+    @classmethod
+    def openrouter(cls):
+        return cls(generation_model = "deepseek/deepseek-r1-zero:free")
     
     def dict_(self):
         return asdict(self)
