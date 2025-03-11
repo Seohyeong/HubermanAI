@@ -14,7 +14,8 @@ def init_config(llm_model_name):
     os.environ["LANGCHAIN_PROJECT"] = os.getenv("LANGSMITH_PROJECT")
 
     def resolve_path(config, project_dir):
-        config.db_dir = os.path.join(project_dir, config.db_dir)
+        config.rag_db_dir = os.path.join(project_dir, config.rag_db_dir)
+        config.query_db_dir = os.path.join(project_dir, config.query_db_dir)
         config.history_db = os.path.join(project_dir, config.history_db)
         config.train_data_path = os.path.join(project_dir, config.train_data_path)
         config.qna_test_data_path = os.path.join(project_dir, config.qna_test_data_path)
