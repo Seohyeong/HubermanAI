@@ -4,6 +4,7 @@ __pycache__
 
 TODO.txt
 run.sh
+rag_output.txt
 
 logs/
 api/app.log
