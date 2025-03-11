@@ -40,8 +40,8 @@ class RagChatbot():
         
         # llm
         self.llm = init_llm_model(self.llm_model_name, self.config.generation_model)
-        
-    def retrieve(self, query: str, k: int) -> RAGOutput:
+            
+    def retrieve_with_score(self, query: str, k: int) -> RAGOutput:
         """basic retriever"""
         docs, scores = zip(*self.vectorstore.similarity_search_with_relevance_scores(query, k=k))
         return RAGOutput(docs=[RAGDoc(video_id=doc.metadata.get("video_id"),
@@ -66,15 +66,14 @@ class RagChatbot():
         response = self.llm.invoke(prompt.format_messages(context=chat_history, question=query))
         return response.content
         
-    def invoke(self, contextualized_query: str) -> RAGOutput:
+    def invoke(self, query: str, chat_history: list) -> RAGOutput:
+        contextualized_query = self.get_contextualized_query(query, chat_history)
         docs = self.retriever.invoke(contextualized_query)
-        if not docs:
-            return RAGOutput(answer=IRRELEVANT_QUERY_PROMPT)
-        else:
+        is_valid = self.validate_query(contextualized_query)
+        if is_valid and docs:
             context = docs2str(docs)
             prompt = ChatPromptTemplate.from_template(CHAT_PROMPT)
-            llm_response = self.llm.invoke(prompt.format(context=context, question=contextualized_query))
-            
+            llm_response = self.llm.invoke(prompt.format(context=context, question=contextualized_query))        
             return RAGOutput(answer=llm_response.content,
                             docs=[RAGDoc(video_id=doc.metadata.get("video_id"),
                                             title=doc.metadata.get("video_title"),
@@ -83,6 +82,8 @@ class RagChatbot():
                                             time_end=doc.metadata.get("time_end"),
                                             segment_idx=doc.metadata.get("segment_idx"))
                                     for doc in docs])
+        else:
+            return RAGOutput(answer=IRRELEVANT_QUERY_PROMPT)
     
 def main():
     rag_chain = RagChatbot("cohere")

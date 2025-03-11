@@ -20,7 +20,7 @@ def chat(query_input: QueryInput):
     if not session_id:
         session_id = str(uuid.uuid4())
     
-    llm_output = rag_chain.invoke_with_history(query_input.question, query_input.chat_history)
+    llm_output = rag_chain.invoke(query_input.question, query_input.chat_history)
     answer = llm_output.answer
     
     logging.info(f"Session ID: {session_id}, AI Response: {answer}")
