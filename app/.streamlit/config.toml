@@ -3,4 +3,6 @@ primaryColor="#11A3E2"
 backgroundColor="#FFFFFF"
 secondaryBackgroundColor="#F0F2F6"
 textColor="#131313"
-font="sans serif"
+
+[browser]
+gatherUsageStats = false
