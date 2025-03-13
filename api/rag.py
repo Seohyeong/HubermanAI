@@ -81,9 +81,13 @@ class RagChatbot():
                                             time_start=doc.metadata.get("time_start"),
                                             time_end=doc.metadata.get("time_end"),
                                             segment_idx=doc.metadata.get("segment_idx"))
-                                    for doc in self.docs])
+                                    for doc in self.docs],
+                            contextualized_query=self.contextualized_query,
+                            is_valid=True)
         else:
-            return RAGOutput(answer=IRRELEVANT_QUERY_PROMPT)
+            return RAGOutput(answer=IRRELEVANT_QUERY_PROMPT, 
+                             contextualized_query=self.contextualized_query,
+                             is_valid=False)
     
 def main():
     rag_chain = RagChatbot("cohere")

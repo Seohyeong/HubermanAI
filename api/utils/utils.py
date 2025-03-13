@@ -67,6 +67,8 @@ class RAGDoc(BaseModel):
 class RAGOutput(BaseModel):
     answer: str = Field(default=None)
     docs: list[RAGDoc] = Field(default=[])
+    contextualized_query: str = Field(default=None)
+    is_valid: bool = Field(default=None)
     
 class QueryInput(BaseModel):
     session_id: str = Field(default=None)
@@ -77,3 +79,5 @@ class QueryOutput(BaseModel):
     session_id: str
     answer: str
     docs: list[RAGDoc] = Field(default=[])
+    contextualized_query: str = Field(default=None)
+    is_valid: bool = Field(default=None)

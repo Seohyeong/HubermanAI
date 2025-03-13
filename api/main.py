@@ -22,7 +22,10 @@ def chat(query_input: QueryInput):
     
     llm_output = rag_chain.invoke(query_input.question, query_input.chat_history)
     answer = llm_output.answer
+    contextualized_query = llm_output.contextualized_query
+    is_valid = llm_output.is_valid
     
     logging.info(f"Session ID: {session_id}, AI Response: {answer}")
     
-    return QueryOutput(session_id=session_id, answer=answer, docs=llm_output.docs)
+    return QueryOutput(session_id=session_id, answer=answer, docs=llm_output.docs,
+                       contextualized_query=contextualized_query, is_valid=is_valid)
