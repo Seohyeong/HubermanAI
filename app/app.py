@@ -24,10 +24,20 @@ def convert_to_sec(timestamp: str) -> int:
     else:
         return None                       
 
+def create_flattened_chat_history(chat_history):
+    flattened_chat_history = []
+    for pair in chat_history:
+        user_msg, assistant_msg = pair
+        if user_msg["is_valid"]:
+            flattened_chat_history.append({"role": user_msg["role"], "content": user_msg["content"]})
+            flattened_chat_history.append({"role": assistant_msg["role"], "content": assistant_msg["content"]})
+    return flattened_chat_history
+
 def display_question(question):
     st.markdown("""#### {}""".format(question))
     
 def display_answer(answer):
+    answer = answer.replace("#", "")
     st.markdown(answer)
     
 def display_expander(videos):
@@ -54,7 +64,6 @@ def display_expander(videos):
                             **{}** [\[Watch on Youtube\]]({})  
                             :gray[*{}*]
                             """.format(video_title, video_url_start_end, video_header))
-                # st.markdown("[Watch it on Youtube](%s)" % video_url_start_end)    
      
 
 st.markdown("""
@@ -88,16 +97,16 @@ if prompt := st.chat_input("Ask anything"):
     display_question(prompt)
 
     with st.spinner("Generating response..."):
-        flattened_chat_history = [item for sublist in st.session_state.chat_history for item in sublist]
+        chat_history = create_flattened_chat_history(st.session_state.chat_history)
         response = get_api_response(question = prompt, 
-                                    chat_history = flattened_chat_history, 
+                                    chat_history = chat_history, 
                                     session_id = st.session_state.session_id)
         
         if response:
-            st.session_state.session_id = response.get("session_id")
-            st.session_state.chat_history.append([{"role": "user", "content": prompt},
-                                                  {"role": "assistant", "content": response["answer"]}])
-            
+            st.session_state.session_id = response.get("session_id")  
+            st.session_state.chat_history.append([{"role": "user", "content": prompt, "is_valid": response.get("is_valid")},
+                                                {"role": "assistant", "content": response["answer"], "is_valid": response.get("is_valid")}])
+                
             display_answer(response["answer"])
 
             if response["docs"]:
