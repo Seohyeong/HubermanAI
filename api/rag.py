@@ -67,13 +67,13 @@ class RagChatbot():
         return response.content
         
     def invoke(self, query: str, chat_history: list) -> RAGOutput:
-        contextualized_query = self.get_contextualized_query(query, chat_history)
-        docs = self.retriever.invoke(contextualized_query)
-        is_valid = self.validate_query(contextualized_query)
-        if is_valid and docs:
-            context = docs2str(docs)
+        self.contextualized_query = self.get_contextualized_query(query, chat_history)
+        self.docs = self.retriever.invoke(self.contextualized_query)
+        self.is_valid = self.validate_query(self.contextualized_query)
+        if self.is_valid and self.docs:
+            context = docs2str(self.docs)
             prompt = ChatPromptTemplate.from_template(CHAT_PROMPT)
-            llm_response = self.llm.invoke(prompt.format(context=context, question=contextualized_query))        
+            llm_response = self.llm.invoke(prompt.format(context=context, question=self.contextualized_query))        
             return RAGOutput(answer=llm_response.content,
                             docs=[RAGDoc(video_id=doc.metadata.get("video_id"),
                                             title=doc.metadata.get("video_title"),
@@ -81,7 +81,7 @@ class RagChatbot():
                                             time_start=doc.metadata.get("time_start"),
                                             time_end=doc.metadata.get("time_end"),
                                             segment_idx=doc.metadata.get("segment_idx"))
-                                    for doc in docs])
+                                    for doc in self.docs])
         else:
             return RAGOutput(answer=IRRELEVANT_QUERY_PROMPT)
     
@@ -111,39 +111,25 @@ def main():
             f.write("\n----------------------------------------\n")
             f.write(f"QUESTION:{q}\n")
             
-            contextualized_query = rag_chain.get_contextualized_query(q, chat_history)
-            is_valid = rag_chain.validate_query(contextualized_query)
+            llm_output = rag_chain.invoke(q, chat_history)
             
             f.write("----------------------------------------\n")
-            f.write(f"CONTEXTUALIZE_QUESTION:{contextualized_query}\n")
+            f.write(f"CONTEXTUALIZE_QUESTION:{rag_chain.contextualized_query}\n")
             
-            history_output = rag_chain.invoke(contextualized_query)
-            if history_output.docs:    
-                if is_valid:
-                    f.write("----------------------------------------\n")
-                    f.write("VALID AND DOCS FOUND\n")
-                    f.write("----------------------------------------\n")
-                    f.write(f"ANSWER:\n{history_output.answer}\n")
-                    chat_history.extend([
-                        HumanMessage(content=q),
-                        AIMessage(content=history_output.answer)
-                    ])
-                else:
-                    f.write("----------------------------------------\n")
-                    f.write("INVALID AND DOCS NOT FOUND\n")
-                    f.write("----------------------------------------\n")
-                    f.write(f"ANSWER:\n{history_output.answer}\n")
+            if llm_output.docs:  
+                f.write("----------------------------------------\n")
+                f.write(f"DOCS FOUND\n")
+                chat_history.extend([
+                    HumanMessage(content=q),
+                    AIMessage(content=llm_output.answer)
+                ])
             else:
-                if is_valid:
-                    f.write("----------------------------------------\n")
-                    f.write("VALID AND DOCS NOT FOUND\n")
-                    f.write("----------------------------------------\n")
-                    f.write(f"ANSWER:\n{history_output.answer}\n")
-                else:
-                    f.write("----------------------------------------\n")
-                    f.write("INVALID AND DOCS NOT FOUND\n")
-                    f.write("----------------------------------------\n")
-                    f.write(f"ANSWER:\n{history_output.answer}\n")
+                f.write("----------------------------------------\n")
+                f.write(f"NO DOCS FOUND\n")  
+                
+            f.write("----------------------------------------\n")
+            f.write(f"ANSWER: {llm_output.answer}\n")          
+
                     
     if rag_chain.config.activate_mlflow:
         stop_mlflow_server(mlflow_process)
