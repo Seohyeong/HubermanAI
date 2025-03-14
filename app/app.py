@@ -1,6 +1,10 @@
 import streamlit as st
 from api_utils import get_api_response
 
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from api.logger_config import logger
 
 def format_timestamp(timestamp: str) -> str:
     ts = timestamp.strip().split(":")
@@ -66,6 +70,7 @@ def display_expander(videos):
                             """.format(video_title, video_url_start_end, video_header))
      
 
+logger.info("Starting Streamlit application")
 st.markdown("""
     <style>
         [data-testid="stDecoration"] {
@@ -101,7 +106,7 @@ if prompt := st.chat_input("Ask anything"):
         response = get_api_response(question = prompt, 
                                     chat_history = chat_history, 
                                     session_id = st.session_state.session_id)
-        
+            
         if response:
             st.session_state.session_id = response.get("session_id")  
             st.session_state.chat_history.append([{"role": "user", "content": prompt, "is_valid": response.get("is_valid")},
@@ -117,4 +122,5 @@ if prompt := st.chat_input("Ask anything"):
                 st.session_state.videos.append([])
                 
         else:
+            logger.error("[Streamlit] Failed to get a response from the API.")
             st.error("Failed to get a response from the API. Please try again.")

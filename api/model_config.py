@@ -21,7 +21,7 @@ class Config:
     query_db_collection_name = "huberman"
     
     # retriever db
-    rag_db_dir: str = "chroma_db_split_docs"
+    rag_db_dir: str = "chroma_db_docs"
     rag_db_collection_name = "huberman"
     
     # sqlite3

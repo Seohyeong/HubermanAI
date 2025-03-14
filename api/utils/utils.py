@@ -3,7 +3,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 import subprocess
 
-from config import get_config
+from model_config import get_config
 
 
 # init config

@@ -13,33 +13,59 @@ from utils.eval_utils import test_retriever
 from utils.utils import init_config, \
     start_mlflow_server, stop_mlflow_server, \
     RAGDoc, RAGOutput
-
+from logger_config import logger
 
 
 class RagChatbot():
     def __init__(self, llm_model_name):
+        logger.info("Initializing RAG system")
         self.llm_model_name = llm_model_name
-        self.config = init_config(self.llm_model_name)
+        try:
+            self.config = init_config(self.llm_model_name)
+            logger.debug("Configuration initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize config: {str(e)}")
+            
         
         # embedding model
-        self.embedding_function = init_embedding_model(self.config.embedding_model, self.config.device)
+        logger.info("Initializing emebedding")
+        try:
+            self.embedding_function = init_embedding_model(self.config.embedding_model, self.config.device)
+            logger.debug("Embedding model initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize embedding model: {str(e)}")
         
         # query retriever
-        self.query_vectorstore = init_query_db(self.config, self.embedding_function)
-        self.query_retriever = self.query_vectorstore.as_retriever(
-            search_type=self.config.qr_search_type, 
-            search_kwargs={"k": self.config.qr_top_k}
-            )
+        logger.info("Initializing query vectorstore and retriever")
+        try:
+            self.query_vectorstore = init_query_db(self.config, self.embedding_function)
+            self.query_retriever = self.query_vectorstore.as_retriever(
+                search_type=self.config.qr_search_type, 
+                search_kwargs={"k": self.config.qr_top_k}
+                )
+            logger.debug("Query vectorstore and retriever initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize query vectorstore and retriever: {str(e)}")
         
         # basic retriever
-        self.vectorstore = init_db(self.config, self.embedding_function)
-        self.retriever = self.vectorstore.as_retriever(
-            search_type=self.config.rr_search_type, 
-            search_kwargs={"score_threshold": self.config.rr_score_threshold}
-            )
-        
+        logger.info("Initializing RAG vectorstore and retriever")
+        try:
+            self.vectorstore = init_db(self.config, self.embedding_function)
+            self.retriever = self.vectorstore.as_retriever(
+                search_type=self.config.rr_search_type, 
+                search_kwargs={"score_threshold": self.config.rr_score_threshold}
+                )
+            logger.debug("RAG vectorstore and retriever initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize RAG vectorstore and retriever: {str(e)}")
+            
         # llm
-        self.llm = init_llm_model(self.llm_model_name, self.config.generation_model)
+        logger.info("Initializing LLM")
+        try:
+            self.llm = init_llm_model(self.llm_model_name, self.config.generation_model)
+            logger.debug("LLM initialized")
+        except Exception as e:
+            logger.error(f"Failed to initizlize LLM: {str(e)}")
             
     def retrieve_with_score(self, query: str, k: int) -> RAGOutput:
         """basic retriever"""
@@ -77,14 +103,39 @@ class RagChatbot():
         return response.content
         
     def invoke(self, query: str, chat_history: list) -> RAGOutput:
-        self.contextualized_query = self.get_contextualized_query(query, chat_history)
-        self.docs = self.retriever.invoke(self.contextualized_query)
-        self.is_valid = self.validate_query(self.contextualized_query)
+        logger.info("Contextualizing the query")
+        try:
+            self.contextualized_query = self.get_contextualized_query(query, chat_history)
+            logger.debug("Query is contextualized")
+        except Exception as e:
+            logger.error(f"Failed to contextualized the query: {str(e)}")
+            
+        logger.info("Retrieving relevant documents")
+        try:
+            self.docs = self.retriever.invoke(self.contextualized_query)
+            logger.debug("Relevant docs retrieved")
+        except Exception as e:
+            logger.error(f"Failed to retrieve documents: {str(e)}")
+            
+        logger.info("Validating query")
+        try:
+            self.is_valid = self.validate_query(self.contextualized_query)
+            logger.debug("Query is validated")
+        except Exception as e:
+            logger.error(f"Failed to validate query: {str(e)}")
+            
         if self.is_valid and self.docs:
-            context = docs2str(self.docs)
-            prompt = ChatPromptTemplate.from_template(CHAT_PROMPT)
-            llm_response = self.llm.invoke(prompt.format(context=context, question=self.contextualized_query))
+            logger.info("Generating the response")
+            try:
+                context = docs2str(self.docs)
+                prompt = ChatPromptTemplate.from_template(CHAT_PROMPT)
+                llm_response = self.llm.invoke(prompt.format(context=context, question=self.contextualized_query))
+                logger.debug("Response generated")
+            except Exception as e:
+                logger.error("Failed to generate the response")
+                
             self.filtered_docs = self.filter_docs(self.docs)     
+            
             return RAGOutput(answer=llm_response.content,
                             docs=[RAGDoc(video_id=doc.metadata.get("video_id"),
                                             title=doc.metadata.get("video_title"),
