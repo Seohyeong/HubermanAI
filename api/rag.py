@@ -60,6 +60,16 @@ class RagChatbot():
             return True
         else:
             return False
+        
+    def filter_docs(self, docs):
+        filtered_docs = []
+        video_ids = set()
+        for doc in docs:
+            video_id = "_".join(doc.id.split("_")[:-1])
+            if video_id not in video_ids:
+                filtered_docs.append(doc)
+                video_ids.add(video_id)
+        return filtered_docs
     
     def get_contextualized_query(self, query, chat_history):
         prompt = ChatPromptTemplate.from_template(QUERY_CONTEXTUALIZER_PROMPT)
@@ -73,7 +83,8 @@ class RagChatbot():
         if self.is_valid and self.docs:
             context = docs2str(self.docs)
             prompt = ChatPromptTemplate.from_template(CHAT_PROMPT)
-            llm_response = self.llm.invoke(prompt.format(context=context, question=self.contextualized_query))        
+            llm_response = self.llm.invoke(prompt.format(context=context, question=self.contextualized_query))
+            self.filtered_docs = self.filter_docs(self.docs)     
             return RAGOutput(answer=llm_response.content,
                             docs=[RAGDoc(video_id=doc.metadata.get("video_id"),
                                             title=doc.metadata.get("video_title"),
@@ -81,7 +92,7 @@ class RagChatbot():
                                             time_start=doc.metadata.get("time_start"),
                                             time_end=doc.metadata.get("time_end"),
                                             segment_idx=doc.metadata.get("segment_idx"))
-                                    for doc in self.docs],
+                                    for doc in self.filtered_docs],
                             contextualized_query=self.contextualized_query,
                             is_valid=True)
         else:
