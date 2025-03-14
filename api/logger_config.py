@@ -4,14 +4,14 @@ from pathlib import Path
 from datetime import datetime
 
 def setup_logging(log_level=logging.INFO):
-    os.makedirs("logs", exist_ok=True)
+    project_dir = str(Path(__file__).resolve().parent.parent)
+    os.makedirs(os.path.join(project_dir, "logs"), exist_ok=True)
     
     logger = logging.getLogger('RAG')
     logger.setLevel(log_level)
     
     # Create handlers
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    project_dir = str(Path(__file__).resolve().parent.parent)
     file_handler = logging.FileHandler(os.path.join(project_dir, f"logs/rag_{timestamp}.log"))
     console_handler = logging.StreamHandler()
     
