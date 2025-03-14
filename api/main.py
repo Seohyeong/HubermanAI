@@ -1,16 +1,17 @@
 from fastapi import FastAPI
 import uuid
 import logging
+from mangum import Mangum # to use aws lambda
 
 from utils.utils import QueryInput, QueryOutput
 from rag import RagChatbot
 from logger_config import logger
 
-# logging.basicConfig(filename="app.log", level=logging.INFO)
 
 app = FastAPI()
-rag_chain = RagChatbot("cohere")
+handler = Mangum(app)
 
+rag_chain = RagChatbot("cohere")
 
 @app.post("/chat", response_model=QueryOutput)
 def chat(query_input: QueryInput):
