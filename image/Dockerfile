@@ -28,4 +28,4 @@ COPY app ${LAMBDA_TASK_ROOT}/app
 
 # Copy data folder
 COPY chroma_db_docs ${LAMBDA_TASK_ROOT}/chroma_db_docs
-COPY chroma_db_query ${chroma_db_docs}/chroma_db_query
+COPY chroma_db_query ${LAMBDA_TASK_ROOT}/chroma_db_query
