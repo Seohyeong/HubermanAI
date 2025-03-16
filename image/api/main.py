@@ -11,7 +11,7 @@ from logger_config import logger
 app = FastAPI()
 handler = Mangum(app)
 
-rag_chain = RagChatbot("cohere")
+rag_chain = RagChatbot("openai")
 
 @app.post("/chat", response_model=QueryOutput)
 def chat(query_input: QueryInput):
@@ -34,3 +34,11 @@ def chat(query_input: QueryInput):
     
     return QueryOutput(session_id=session_id, answer=answer, docs=llm_output.docs,
                        contextualized_query=contextualized_query, is_valid=is_valid)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    # Run this as a server directly.
+    port = 8000
+    print(f"Running the FastAPI server on port {port}.")
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

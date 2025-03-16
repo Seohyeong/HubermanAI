@@ -9,7 +9,7 @@ from model_config import get_config
 # init config
 def init_config(llm_model_name):
     config = get_config(llm_model_name)
-    os.environ["LANGCHAIN_TRACING"] = os.getenv("LANGSMITH_TRACING")
+    os.environ["LANGCHAIN_TRACING_V2"] = os.getenv("LANGSMITH_TRACING")
     os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGSMITH_API_KEY")
     os.environ["LANGCHAIN_PROJECT"] = os.getenv("LANGSMITH_PROJECT")
 

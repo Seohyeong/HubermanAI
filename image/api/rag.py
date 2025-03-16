@@ -2,17 +2,11 @@
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate
 
-# mlflow
-import mlflow
-
 # utils
 from utils.db_utils import init_db, init_query_db
 from utils.model_utils import init_embedding_model, init_llm_model
 from utils.prompt_utils import docs2str, CHAT_PROMPT, QUERY_CONTEXTUALIZER_PROMPT, IRRELEVANT_QUERY_PROMPT
-from utils.eval_utils import test_retriever
-from utils.utils import init_config, \
-    start_mlflow_server, stop_mlflow_server, \
-    RAGDoc, RAGOutput
+from utils.utils import init_config, RAGDoc, RAGOutput
 from logger_config import logger
 
 
@@ -30,7 +24,7 @@ class RagChatbot():
         # embedding model
         logger.info("Initializing emebedding")
         try:
-            self.embedding_function = init_embedding_model(self.config.embedding_model, self.config.device)
+            self.embedding_function = init_embedding_model()
             logger.debug("Embedding model initialized")
         except Exception as e:
             logger.error(f"Failed to initialize embedding model: {str(e)}")
@@ -62,7 +56,7 @@ class RagChatbot():
         # llm
         logger.info("Initializing LLM")
         try:
-            self.llm = init_llm_model(self.llm_model_name, self.config.generation_model)
+            self.llm = init_llm_model(self.config.generation_model)
             logger.debug("LLM initialized")
         except Exception as e:
             logger.error(f"Failed to initizlize LLM: {str(e)}")
@@ -105,36 +99,37 @@ class RagChatbot():
     def invoke(self, query: str, chat_history: list) -> RAGOutput:
         logger.info("Contextualizing the query")
         try:
-            self.contextualized_query = self.get_contextualized_query(query, chat_history)
+            contextualized_query = self.get_contextualized_query(query, chat_history)
             logger.debug("Query is contextualized")
         except Exception as e:
             logger.error(f"Failed to contextualized the query: {str(e)}")
             
         logger.info("Retrieving relevant documents")
         try:
-            self.docs = self.retriever.invoke(self.contextualized_query)
+            docs = self.retriever.invoke(contextualized_query)
+            docs = docs[:3] # only pass top 3 filtered by score
             logger.debug("Relevant docs retrieved")
         except Exception as e:
             logger.error(f"Failed to retrieve documents: {str(e)}")
             
         logger.info("Validating query")
         try:
-            self.is_valid = self.validate_query(self.contextualized_query)
+            is_valid = self.validate_query(contextualized_query)
             logger.debug("Query is validated")
         except Exception as e:
             logger.error(f"Failed to validate query: {str(e)}")
             
-        if self.is_valid and self.docs:
+        if is_valid and docs:
             logger.info("Generating the response")
             try:
-                context = docs2str(self.docs)
+                context = docs2str(docs)
                 prompt = ChatPromptTemplate.from_template(CHAT_PROMPT)
-                llm_response = self.llm.invoke(prompt.format(context=context, question=self.contextualized_query))
+                llm_response = self.llm.invoke(prompt.format(context=context, question=contextualized_query))
                 logger.debug("Response generated")
             except Exception as e:
                 logger.error("Failed to generate the response")
                 
-            self.filtered_docs = self.filter_docs(self.docs)     
+            filtered_docs = self.filter_docs(docs)     
             
             return RAGOutput(answer=llm_response.content,
                             docs=[RAGDoc(video_id=doc.metadata.get("video_id"),
@@ -143,16 +138,23 @@ class RagChatbot():
                                             time_start=doc.metadata.get("time_start"),
                                             time_end=doc.metadata.get("time_end"),
                                             segment_idx=doc.metadata.get("segment_idx"))
-                                    for doc in self.filtered_docs],
-                            contextualized_query=self.contextualized_query,
+                                    for doc in filtered_docs],
+                            contextualized_query=contextualized_query,
                             is_valid=True)
         else:
             return RAGOutput(answer=IRRELEVANT_QUERY_PROMPT, 
-                             contextualized_query=self.contextualized_query,
+                             contextualized_query=contextualized_query,
                              is_valid=False)
     
+
+def evaluate():
+    rag_chain = RagChatbot("openai")
+    from utils.eval_utils import test_retriever
+    test_retriever(rag_chain, k=3, threshold=0.5)
+    
+    
 def main():
-    rag_chain = RagChatbot("cohere")
+    rag_chain = RagChatbot("openai")
     
     questions = [
         "Hello",
@@ -163,10 +165,10 @@ def main():
         ]
     
     if rag_chain.config.activate_mlflow:
+        import mlflow
+        from utils.utils import start_mlflow_server, stop_mlflow_server
         mlflow_process = start_mlflow_server(rag_chain.config.host, rag_chain.config.port)
         mlflow.set_tracking_uri(f"http://{rag_chain.config.host}:{rag_chain.config.port}")
-    
-     # test_retriever(rag_chain, k=3, threshold=0.5)
      
     chat_history = []
     
@@ -180,8 +182,15 @@ def main():
             llm_output = rag_chain.invoke(q, chat_history)
             
             f.write("----------------------------------------\n")
-            f.write(f"CONTEXTUALIZE_QUESTION:{rag_chain.contextualized_query}\n")
+            f.write(f"CONTEXTUALIZE_QUESTION:{llm_output.contextualized_query}\n")
             
+            if llm_output.is_valid:
+                f.write("----------------------------------------\n")
+                f.write(f"VALID QUERY\n")                  
+            else:
+                f.write("----------------------------------------\n")
+                f.write(f"INVALID QUERY\n")   
+                
             if llm_output.docs:  
                 f.write("----------------------------------------\n")
                 f.write(f"DOCS FOUND\n")
@@ -202,3 +211,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # evaluate()

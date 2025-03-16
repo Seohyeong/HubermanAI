@@ -1,4 +1,4 @@
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 
 @dataclass
 class Config:
@@ -8,8 +8,8 @@ class Config:
     device: str = "cpu" # "gpu"
     
     # model
-    embedding_model: str = "BAAI/bge-small-en-v1.5"
-    generation_model: str = "gpt-3.5-turbo"
+    embedding_model: str = "text-embedding-3-small"
+    generation_model: str = "gpt-4o"
     
     # mlflow
     host: str = "127.0.0.1"
@@ -43,13 +43,13 @@ class Config:
     
     # rag retriever
     rr_top_k: int = 3
-    rr_score_threshold: float = 0.6
+    rr_score_threshold: float = 0.5 # 0.01
     rr_search_type: str = "similarity_score_threshold"
     
     
     @classmethod
     def openai(cls):
-        return cls(generation_model = "gpt-3.5-turbo")
+        return cls(generation_model = "gpt-4o")
         
     @classmethod
     def cohere(cls):
@@ -63,9 +63,6 @@ class Config:
     @classmethod
     def openrouter(cls):
         return cls(generation_model = "deepseek/deepseek-r1-zero:free")
-    
-    def dict_(self):
-        return asdict(self)
     
 
 def get_config(exp_name=None):

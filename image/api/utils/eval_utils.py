@@ -15,7 +15,7 @@ def get_rr(gt_doc_id: str, pred_doc_ids: list[str]) -> float:
 def get_mrr(data, rag_chain, k) -> float:
     mrr = 0
     for item in tqdm(data, total=len(data)):
-        output = rag_chain.retrieve(item["question"], k)
+        output = rag_chain.retrieve_with_score(item["question"], k)
         retrieved_docs = output.docs
         gt_doc_id = item["doc_id"]
         pred_doc_ids = []
@@ -30,7 +30,7 @@ def get_mrr(data, rag_chain, k) -> float:
 def get_recall(data, rag_chain, k) -> float:
     recall = 0
     for item in tqdm(data, total=len(data)):
-        output = rag_chain.retrieve(item["question"], k)
+        output = rag_chain.retrieve_with_score(item["question"], k)
         retrieved_docs = output.docs
         gt_doc_id = item["doc_id"]
         pred_doc_ids = []
@@ -45,7 +45,7 @@ def get_recall(data, rag_chain, k) -> float:
 def get_score_dist(data, rag_chain, k) -> list[float]:
     scores = []
     for item in tqdm(data, total=len(data)):
-        output = rag_chain.retrieve(item["question"], k)
+        output = rag_chain.retrieve_with_score(item["question"], k)
         retrieved_docs = output.docs
         pred_doc_ids = []
         for doc in retrieved_docs:
@@ -88,7 +88,6 @@ def test_retriever(rag_chain, k, threshold):
         mlflow.log_param("k", k)
         mlflow.log_param("threshold", threshold)
         mlflow.log_param("embedding_model", rag_chain.config.embedding_model)
-        mlflow.log_param("search_type", rag_chain.config.search_type)
         
         # for IR recall, mrr
         with open(rag_chain.config.syn_test_data_path, "r", encoding = "utf-8") as f:

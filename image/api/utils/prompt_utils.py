@@ -24,7 +24,7 @@ CHAT_PROMPT = (
     "Note: The source material may contain informal or ungrammatical phrases as it is extracted from a YouTube video.\n"
     "Use all relevant information but do not make up any facts that are not given.\n"
     "Present the information directly without referring to 'the context,' 'the speaker,' or the source material.\n"
-    "Provide a detailed and explicit answer rather than a simple summary.\n"
+    "Provide a detailed and explicit answer of at least 300 words rather than a simple summary.\n"
     "Question: {question}\n"
     "Answer: "
 )
@@ -33,7 +33,7 @@ CHAT_PROMPT = (
 QUERY_CONTEXTUALIZER_PROMPT = (
     "Given a CHAT HISTORY and the latest user QUERY which might reference context in the CHAT HISTORY, " 
     "formulate a standalone QUERY which can be understood WITHOUT the CHAT HISTORY.\n"
-    "Do NOT answer the QUERY, just reformulate it if needed and otherwise return it as is. "
+    "NEVER respond or answer to the QUERY, just reformulate it if needed and otherwise return it as is. "
     "If the CHAT HISTOIRY is an empty list, output the QUERY as is.\n\n"
     "The CHAT HISTORY is below.\n"
     "---------------------\n"

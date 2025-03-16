@@ -1,17 +1,17 @@
-import json
 import os
 import sys
-from tqdm import tqdm
-import uuid
 import shutil
 
-from langchain_core.documents import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 
 
 # query indexing
 def create_questions(file_paths: list):
+    
+    import json
+    import uuid
+    from langchain_core.documents import Document
+    
     questions = []
     for json_path in file_paths:
         is_relevant = False if "irrelevant_qs" in json_path else True
@@ -28,6 +28,10 @@ def create_questions(file_paths: list):
 
 # rag indexing
 def create_docs(json_path):
+    
+    import json
+    from langchain_core.documents import Document
+    
     with open(json_path, "r", encoding = "utf-8") as f:
         data = [json.loads(line) for line in f]
     docs = []
@@ -62,14 +66,16 @@ def init_query_db(config, embedding_function):
             copy_chroma_to_tmp(chroma_query_db_dir)
             QUERY_DB_INSTANCE = Chroma(collection_name=config.query_db_collection_name,
                                 embedding_function=embedding_function,
-                                persist_directory=f"tmp/{chroma_query_db_dir}")
+                                persist_directory=f"tmp/{chroma_query_db_dir}",
+                                collection_metadata={"hnsw:space": "cosine"})
             vectorstore = QUERY_DB_INSTANCE
             print(f"Init RAG ChromaDB {QUERY_DB_INSTANCE} from {chroma_query_db_dir}")
     else:
         if os.path.exists(config.query_db_dir):
             vectorstore = Chroma(collection_name=config.query_db_collection_name,
                                 embedding_function=embedding_function,
-                                persist_directory=config.query_db_dir)
+                                persist_directory=config.query_db_dir,
+                                collection_metadata={"hnsw:space": "cosine"})
         else:
             file_paths = [config.irrelevant_qs_path, config.relevant_qs_path, 
                         config.qna_test_data_path, config.syn_test_data_path]
@@ -77,7 +83,8 @@ def init_query_db(config, embedding_function):
             vectorstore = Chroma.from_documents(collection_name=config.query_db_collection_name,
                                                 documents=questions, 
                                                 embedding=embedding_function, 
-                                                persist_directory=config.query_db_dir)
+                                                persist_directory=config.query_db_dir,
+                                                collection_metadata={"hnsw:space": "cosine"})
     return vectorstore
     
 def init_db(config, embedding_function):
@@ -90,18 +97,25 @@ def init_db(config, embedding_function):
             copy_chroma_to_tmp(chroma_rag_db_dir)
             RAG_DB_INSTANCE = Chroma(collection_name=config.rag_db_collection_name,
                                 embedding_function=embedding_function,
-                                persist_directory=f"tmp/{chroma_rag_db_dir}")
+                                persist_directory=f"tmp/{chroma_rag_db_dir}",
+                                collection_metadata={"hnsw:space": "cosine"})
             vectorstore = RAG_DB_INSTANCE
             print(f"Init RAG ChromaDB {RAG_DB_INSTANCE} from {chroma_rag_db_dir}")
     else:
         if os.path.exists(config.rag_db_dir):
             vectorstore = Chroma(collection_name=config.rag_db_collection_name,
                                 embedding_function=embedding_function,
-                                persist_directory=config.rag_db_dir)
-        else:
+                                persist_directory=config.rag_db_dir,
+                                collection_metadata={"hnsw:space": "cosine"})
+        else:  
+              
+            from langchain.text_splitter import RecursiveCharacterTextSplitter
+            from tqdm import tqdm
+            import uuid
+            
             docs = create_docs(config.train_data_path) # 6333
-            text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, # limit: 512
-                                                        chunk_overlap=10,
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=2048, # limit: 8,191
+                                                        chunk_overlap=200,
                                                         length_function=len)
             split_docs = text_splitter.split_documents(docs) # 68858
             for split_doc in split_docs:
@@ -110,13 +124,14 @@ def init_db(config, embedding_function):
 
             vectorstore = Chroma(collection_name=config.rag_db_collection_name, 
                                 embedding_function=embedding_function, 
-                                persist_directory=config.rag_db_dir)
-            batch_size = 100
+                                persist_directory=config.rag_db_dir,
+                                collection_metadata={"hnsw:space": "cosine"})
+            batch_size = 500
             total_docs = len(split_docs)
             with tqdm(total=total_docs, desc="Creating vectorstore") as pbar:
                 for i in range(0, total_docs, batch_size):
                     batch = split_docs[i:min(i+batch_size, total_docs)]
-                    vectorstore.add_documents(documents=batch)
+                    vectorstore.add_documents(documents=batch) # collection_metadata={"hnsw:space": "cosine"}
                     pbar.update(len(batch))
     return vectorstore
 
