@@ -1,23 +1,25 @@
 from fastapi import FastAPI
 import uuid
-import logging
 from mangum import Mangum # to use aws lambda
 
-from utils.utils import QueryInput, QueryOutput
 from rag import RagChatbot
-from logger_config import logger
+from config.logger_config import logger
+from utils.utils import QueryInput, QueryOutput
 
 
 app = FastAPI()
-handler = Mangum(app)
 
 rag_chain = RagChatbot("openai")
+
+@app.get("/")
+def root():
+    return {"Message": "Welcome to Ask Huberman!"}
 
 @app.post("/chat", response_model=QueryOutput)
 def chat(query_input: QueryInput):
     session_id = query_input.session_id
     
-    logging.info(f"[FastAPI] Session ID: {session_id}, User Query: {query_input.question}")
+    logger.info(f"[FastAPI] Session ID: {session_id}, User Query: {query_input.question}")
     
     if not session_id:
         session_id = str(uuid.uuid4())
@@ -27,8 +29,8 @@ def chat(query_input: QueryInput):
         answer = llm_output.answer
         contextualized_query = llm_output.contextualized_query
         is_valid = llm_output.is_valid
-        logging.debug("[FastAPI] Processing completed successfully")
-        logging.info(f"[FastAPI] Session ID: {session_id}, AI Response: {answer}")
+        logger.debug("[FastAPI] Processing completed successfully")
+        logger.info(f"[FastAPI] Session ID: {session_id}, AI Response: {answer}")
     except Exception as e:
         logger.error(f"[FastAPI] Endpoint error: {str(e)}")
     
@@ -36,9 +38,11 @@ def chat(query_input: QueryInput):
                        contextualized_query=contextualized_query, is_valid=is_valid)
 
 
+handler = Mangum(app)
+
 if __name__ == "__main__":
     import uvicorn
     # Run this as a server directly.
     port = 8000
     print(f"Running the FastAPI server on port {port}.")
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=port)

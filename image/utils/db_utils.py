@@ -2,6 +2,11 @@ import os
 import sys
 import shutil
 
+IS_USING_IMAGE_RUNTIME = bool(os.environ.get("IS_USING_IMAGE_RUNTIME", False))
+if IS_USING_IMAGE_RUNTIME:
+    __import__("pysqlite3")
+    sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
+    
 from langchain_chroma import Chroma
 
 
@@ -50,26 +55,28 @@ def create_docs(json_path):
     return docs
 
 
-# CHROMA_PATH = os.environ.get("CHROMA_PATH", "data/chroma")
-IS_USING_IMAGE_RUNTIME = bool(os.environ.get("IS_USING_IMAGE_RUNTIME", False))
 # Reference to singleton instance of ChromaDB
 QUERY_DB_INSTANCE = None
 RAG_DB_INSTANCE = None
 
 def init_query_db(config, embedding_function):
-    if IS_USING_IMAGE_RUNTIME:
+    if config.is_using_image_runtime:
         global QUERY_DB_INSTANCE
-        if not QUERY_DB_INSTANCE:
-            __import__("pysqlite3")
-            sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
-            chroma_query_db_dir = config.query_db_dir.split("/")[-1]
-            copy_chroma_to_tmp(chroma_query_db_dir)
-            QUERY_DB_INSTANCE = Chroma(collection_name=config.query_db_collection_name,
-                                embedding_function=embedding_function,
-                                persist_directory=f"tmp/{chroma_query_db_dir}",
-                                collection_metadata={"hnsw:space": "cosine"})
+        if QUERY_DB_INSTANCE is None:
+            try:
+                chroma_query_db_dir = config.query_db_dir.split("/")[-1]
+                copy_chroma_to_tmp(chroma_query_db_dir)
+                QUERY_DB_INSTANCE = Chroma(collection_name=config.query_db_collection_name,
+                                    embedding_function=embedding_function,
+                                    persist_directory=f"/tmp/{chroma_query_db_dir}",
+                                    collection_metadata={"hnsw:space": "cosine"})
+                vectorstore = QUERY_DB_INSTANCE
+            except Exception as e:
+                print(f"Failed to init_query_db {str(e)}")
+            print(f"Init RAG ChromaDB query_db_instance: {QUERY_DB_INSTANCE} from {chroma_query_db_dir}")
+        else:
             vectorstore = QUERY_DB_INSTANCE
-            print(f"Init RAG ChromaDB {QUERY_DB_INSTANCE} from {chroma_query_db_dir}")
+            print("Query vectorstore is NOT initialized!")
     else:
         if os.path.exists(config.query_db_dir):
             vectorstore = Chroma(collection_name=config.query_db_collection_name,
@@ -88,19 +95,23 @@ def init_query_db(config, embedding_function):
     return vectorstore
     
 def init_db(config, embedding_function):
-    if IS_USING_IMAGE_RUNTIME:
+    if config.is_using_image_runtime:
         global RAG_DB_INSTANCE
-        if not RAG_DB_INSTANCE:
-            __import__("pysqlite3")
-            sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
-            chroma_rag_db_dir = config.rag_db_dir.split("/")[-1]
-            copy_chroma_to_tmp(chroma_rag_db_dir)
-            RAG_DB_INSTANCE = Chroma(collection_name=config.rag_db_collection_name,
-                                embedding_function=embedding_function,
-                                persist_directory=f"tmp/{chroma_rag_db_dir}",
-                                collection_metadata={"hnsw:space": "cosine"})
-            vectorstore = RAG_DB_INSTANCE
+        if RAG_DB_INSTANCE is None:
+            try:
+                chroma_rag_db_dir = config.rag_db_dir.split("/")[-1]
+                copy_chroma_to_tmp(chroma_rag_db_dir)
+                RAG_DB_INSTANCE = Chroma(collection_name=config.rag_db_collection_name,
+                                    embedding_function=embedding_function,
+                                    persist_directory=f"/tmp/{chroma_rag_db_dir}",
+                                    collection_metadata={"hnsw:space": "cosine"})
+                vectorstore = RAG_DB_INSTANCE
+            except Exception as e:
+                print(f"Failed to init_query_db {str(e)}")
             print(f"Init RAG ChromaDB {RAG_DB_INSTANCE} from {chroma_rag_db_dir}")
+        else:
+            vectorstore = RAG_DB_INSTANCE
+            print("RAG vectorstore is NOT initialized!")
     else:
         if os.path.exists(config.rag_db_dir):
             vectorstore = Chroma(collection_name=config.rag_db_collection_name,
@@ -117,7 +128,7 @@ def init_db(config, embedding_function):
             text_splitter = RecursiveCharacterTextSplitter(chunk_size=2048, # limit: 8,191
                                                         chunk_overlap=200,
                                                         length_function=len)
-            split_docs = text_splitter.split_documents(docs) # 68858
+            split_docs = text_splitter.split_documents(docs)
             for split_doc in split_docs:
                 md = split_doc.metadata
                 split_doc.id = f"{md['video_id']}_{md['segment_idx']}_{md['time_start']}_{md['time_end']}_{str(uuid.uuid4())}"
@@ -131,12 +142,12 @@ def init_db(config, embedding_function):
             with tqdm(total=total_docs, desc="Creating vectorstore") as pbar:
                 for i in range(0, total_docs, batch_size):
                     batch = split_docs[i:min(i+batch_size, total_docs)]
-                    vectorstore.add_documents(documents=batch) # collection_metadata={"hnsw:space": "cosine"}
+                    vectorstore.add_documents(documents=batch)
                     pbar.update(len(batch))
     return vectorstore
 
 def copy_chroma_to_tmp(db_dir):
-    dst_chroma_path = f"tmp/{db_dir}"
+    dst_chroma_path = f"/tmp/{db_dir}"
 
     if not os.path.exists(dst_chroma_path):
         os.makedirs(dst_chroma_path)

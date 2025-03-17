@@ -1,4 +1,3 @@
-# langchain
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -7,7 +6,7 @@ from utils.db_utils import init_db, init_query_db
 from utils.model_utils import init_embedding_model, init_llm_model
 from utils.prompt_utils import docs2str, CHAT_PROMPT, QUERY_CONTEXTUALIZER_PROMPT, IRRELEVANT_QUERY_PROMPT
 from utils.utils import init_config, RAGDoc, RAGOutput
-from logger_config import logger
+from config.logger_config import logger
 
 
 class RagChatbot():
@@ -24,7 +23,7 @@ class RagChatbot():
         # embedding model
         logger.info("Initializing emebedding")
         try:
-            self.embedding_function = init_embedding_model()
+            self.embedding_function = init_embedding_model(self.config.embedding_model)
             logger.debug("Embedding model initialized")
         except Exception as e:
             logger.error(f"Failed to initialize embedding model: {str(e)}")

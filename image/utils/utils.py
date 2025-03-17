@@ -3,27 +3,34 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 import subprocess
 
-from model_config import get_config
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from config.model_config import get_config
 
 
 # init config
 def init_config(llm_model_name):
     config = get_config(llm_model_name)
-    os.environ["LANGCHAIN_TRACING_V2"] = os.getenv("LANGSMITH_TRACING")
-    os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGSMITH_API_KEY")
-    os.environ["LANGCHAIN_PROJECT"] = os.getenv("LANGSMITH_PROJECT")
+    
+    config.is_using_image_runtime = bool(os.environ.get("IS_USING_IMAGE_RUNTIME", False))
+    
+    if os.getenv("LANGSMITH_TRACING") == "true":
+        os.environ["LANGCHAIN_TRACING_V2"] = os.getenv("LANGSMITH_TRACING")
+        os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGSMITH_API_KEY")
+        os.environ["LANGCHAIN_PROJECT"] = os.getenv("LANGSMITH_PROJECT")
 
     def resolve_path(config, project_dir):
         config.rag_db_dir = os.path.join(project_dir, config.rag_db_dir)
         config.query_db_dir = os.path.join(project_dir, config.query_db_dir)
-        config.history_db = os.path.join(project_dir, config.history_db)
-        config.train_data_path = os.path.join(project_dir, config.train_data_path)
-        config.qna_test_data_path = os.path.join(project_dir, config.qna_test_data_path)
-        config.syn_test_data_path = os.path.join(project_dir, config.syn_test_data_path)
-        config.relevant_qs_path = os.path.join(project_dir, config.relevant_qs_path)
-        config.irrelevant_qs_path = os.path.join(project_dir, config.irrelevant_qs_path)
+        
+        if not config.is_using_image_runtime:
+            config.train_data_path = os.path.join(project_dir, config.train_data_path)
+            config.qna_test_data_path = os.path.join(project_dir, config.qna_test_data_path)
+            config.syn_test_data_path = os.path.join(project_dir, config.syn_test_data_path)
+            config.relevant_qs_path = os.path.join(project_dir, config.relevant_qs_path)
+            config.irrelevant_qs_path = os.path.join(project_dir, config.irrelevant_qs_path)
 
-    project_dir = str(Path(__file__).resolve().parent.parent.parent)
+    project_dir = str(Path(__file__).resolve().parent.parent)
     resolve_path(config, project_dir)
     return config
 
@@ -81,3 +88,8 @@ class QueryOutput(BaseModel):
     docs: list[RAGDoc] = Field(default=[])
     contextualized_query: str = Field(default=None)
     is_valid: bool = Field(default=None)
+    
+    
+# if __name__ == "__main__":
+#     project_dir = str(Path(__file__).resolve().parent.parent)
+#     print(project_dir)
