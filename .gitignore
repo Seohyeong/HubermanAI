@@ -17,7 +17,7 @@ data/
 
 # secrets
 .env
-app/.streamlit/secrets.toml
+.streamlit/secrets.toml
 
 # etc
 TODO.txt
