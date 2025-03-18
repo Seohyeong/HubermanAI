@@ -13,8 +13,6 @@ class Config:
     mlflow_port: str = "8080"
     
     # chroma server on ec2
-    chroma_host: str = "35.91.77.87"
-    chroma_port: str = "8000"
     query_collection_name: str = "query_collection"
     doc_collection_name: str = "doc_collection"
     

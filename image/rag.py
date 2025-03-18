@@ -50,7 +50,7 @@ class RagChatbot():
         # chroma client (TODO: add host and port to config)
         logger.info("[INIT] Initializing ChromaDB")
         try:
-            chroma_client = chromadb.HttpClient(self.config.chroma_host, int(self.config.chroma_port))
+            chroma_client = chromadb.HttpClient(os.getenv("CHROMA_HOST"), os.getenv("CHROMA_PORT"))
             self.query_collection = chroma_client.get_collection(name=self.config.query_collection_name)
             self.doc_collection = chroma_client.get_collection(name=self.config.doc_collection_name)
         except Exception as e:
