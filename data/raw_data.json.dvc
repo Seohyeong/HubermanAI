@@ -1,0 +1,5 @@
+outs:
+- md5: 9ef49ccc1b8b57bd3bc41d1053df89c0
+  size: 41631721
+  hash: md5
+  path: raw_data.json

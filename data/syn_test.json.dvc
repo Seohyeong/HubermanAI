@@ -1,0 +1,5 @@
+outs:
+- md5: d59f73fce1e9986c5c4a3659674ae912
+  size: 3315714
+  hash: md5
+  path: syn_test.json
