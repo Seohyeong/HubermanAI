@@ -20,4 +20,5 @@ data/
 .streamlit/secrets.toml
 
 # etc
+.devcontainer/
 TODO.txt
