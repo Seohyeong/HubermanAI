@@ -13,7 +13,8 @@ rag_output.txt
 mlruns/
 
 # data
-data/
+data/chroma_backup
+data/chroma_persist_dir
 
 # secrets
 .env
