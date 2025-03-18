@@ -7,6 +7,7 @@ run.sh
 rag_output.txt
 
 logs/
+data/
 api/app.log
 
 history_db.db
