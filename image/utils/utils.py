@@ -1,41 +1,9 @@
-import os
-from pathlib import Path
-from pydantic import BaseModel, Field
-import subprocess
+from pydantic import BaseModel
 
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from config.model_config import get_config
-
-
-# init config
-def init_config(llm_model_name):
-    config = get_config(llm_model_name)
-    
-    config.is_using_image_runtime = bool(os.environ.get("IS_USING_IMAGE_RUNTIME", False))
-    
-    if os.getenv("LANGSMITH_TRACING") == "true":
-        os.environ["LANGCHAIN_TRACING_V2"] = os.getenv("LANGSMITH_TRACING")
-        os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGSMITH_API_KEY")
-        os.environ["LANGCHAIN_PROJECT"] = os.getenv("LANGSMITH_PROJECT")
-
-    def resolve_path(config, project_dir):
-        config.rag_db_dir = os.path.join(project_dir, config.rag_db_dir)
-        config.query_db_dir = os.path.join(project_dir, config.query_db_dir)
-        
-        if not config.is_using_image_runtime:
-            config.train_data_path = os.path.join(project_dir, config.train_data_path)
-            config.qna_test_data_path = os.path.join(project_dir, config.qna_test_data_path)
-            config.syn_test_data_path = os.path.join(project_dir, config.syn_test_data_path)
-            config.relevant_qs_path = os.path.join(project_dir, config.relevant_qs_path)
-            config.irrelevant_qs_path = os.path.join(project_dir, config.irrelevant_qs_path)
-
-    project_dir = str(Path(__file__).resolve().parent.parent)
-    resolve_path(config, project_dir)
-    return config
 
 # init mlflow
 def start_mlflow_server(host: str, port: str):
+    import subprocess
     try:
         command = ["mlflow", "server", "--host", host, "--port", str(port)]
         process = subprocess.Popen(command)
@@ -61,6 +29,32 @@ def validate_docs(docs):
             doc_ids.add(doc.id)
     return new_docs
 
+
+# convert doc (from choroma) to RAGdoc format
+def convert_to_ragdoc(docs):
+    new_docs = []
+    
+    ids = docs["ids"][0]
+    scores = docs["distances"][0]
+    metadatas = docs["metadatas"][0]
+    contexts = docs["documents"][0]
+    
+    for id, score, metadata, context in zip(ids, scores, metadatas, contexts):
+        new_doc = RAGDoc(
+            doc_id=id,
+            score=score,
+            context=context,
+            # metadata
+            segment_idx=metadata["segment_idx"],
+            time_end=metadata["time_end"],
+            time_start=metadata["time_start"],
+            header=metadata["video_header"],
+            video_id=metadata["video_id"],
+            title=metadata["video_title"],
+        )
+        new_docs.append(new_doc)
+    return new_docs
+
 # pydantic
 class RAGDoc(BaseModel):
     video_id: str
@@ -68,26 +62,28 @@ class RAGDoc(BaseModel):
     header: str
     time_start: str
     time_end : str
-    segment_idx: str = Field(default=None)
-    score: float = Field(default=None)
+    segment_idx: str = None
+    score: float = None
+    doc_id: str = None
+    context: str = None
     
 class RAGOutput(BaseModel):
-    answer: str = Field(default=None)
-    docs: list[RAGDoc] = Field(default=[])
-    contextualized_query: str = Field(default=None)
-    is_valid: bool = Field(default=None)
+    answer: str = None
+    docs: list[RAGDoc] = []
+    contextualized_query: str = None
+    is_valid: bool = None
     
 class QueryInput(BaseModel):
-    session_id: str = Field(default=None)
+    session_id: str = None
     question: str
-    chat_history: list = Field(default=[])
+    chat_history: list = []
 
 class QueryOutput(BaseModel):
     session_id: str
     answer: str
-    docs: list[RAGDoc] = Field(default=[])
-    contextualized_query: str = Field(default=None)
-    is_valid: bool = Field(default=None)
+    docs: list[RAGDoc] = []
+    contextualized_query: str = None
+    is_valid: bool = None
     
     
 # if __name__ == "__main__":
