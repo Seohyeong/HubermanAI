@@ -2,6 +2,9 @@ import json
 import pandas as pd
 from tqdm import tqdm
 import mlflow
+
+from rag import RagChatbot
+from utils.utils import start_mlflow_server, stop_mlflow_server
     
 
 def get_rr(gt_doc_id: str, pred_doc_ids: list[str]) -> float:
@@ -82,6 +85,9 @@ def test_retriever(rag_chain, k, threshold):
     - score distribution for relevant questions (syn_test_data, qna_test_data)
     - recall, mrr (syn_test_data)
     """
+    mlflow_process = start_mlflow_server(rag_chain.config.mlflow_host, rag_chain.config.mlflow_port)
+    mlflow.set_tracking_uri(f"http://{rag_chain.config.mlflow_host}:{rag_chain.config.mlflow_port}")
+        
     run_name = f"{rag_chain.embedding_function}_retrieval_eval"
     with mlflow.start_run(run_name=run_name):
         mlflow.log_param("model_name", rag_chain.llm_model_name)
@@ -150,3 +156,17 @@ def test_retriever(rag_chain, k, threshold):
             f"SUMMARY(RELATED):\n{pd.Series(rel_data_scores).describe()}\n"
             f"SUMMARY(UNRELATED):\n{pd.Series(irrel_data_scores).describe()}"
         )
+        
+        stop_mlflow_server(mlflow_process)
+
+
+if __name__ == "__main__":
+    rag_chain = RagChatbot()
+    
+    # set path to data
+    rag_chain.config.syn_test_data_path = "/Users/seohyeong/Projects/HubermanAI/data/syn_test.json"
+    rag_chain.config.qna_test_data_path = "/Users/seohyeong/Projects/HubermanAI/data/qna_test.json"
+    rag_chain.config.relevant_qs_path = "/Users/seohyeong/Projects/HubermanAI/data/relevant_qs.json"
+    rag_chain.config.irrelevant_qs_path = "/Users/seohyeong/Projects/HubermanAI/data/irrelevant_qs.json"
+    
+    test_retriever(rag_chain, k=3, threshold=0.5)

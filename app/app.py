@@ -28,6 +28,7 @@ def create_flattened_chat_history(chat_history):
     flattened_chat_history = []
     for pair in chat_history:
         user_msg, assistant_msg = pair
+        # TODO: fix the logic of keeping track of chat_history
         if user_msg["is_valid"]:
             flattened_chat_history.append({"role": user_msg["role"], "content": user_msg["content"]})
             flattened_chat_history.append({"role": assistant_msg["role"], "content": assistant_msg["content"]})

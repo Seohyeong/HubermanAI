@@ -1,6 +1,6 @@
 import logging
 
-def setup_logging(log_level=logging.DEBUG):
+def setup_logging(log_level=logging.INFO):
     logger = logging.getLogger('RAG')
     logger.setLevel(log_level)
     

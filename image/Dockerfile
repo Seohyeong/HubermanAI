@@ -21,8 +21,4 @@ COPY utils ${LAMBDA_TASK_ROOT}/utils
 COPY main.py ${LAMBDA_TASK_ROOT}/
 COPY rag.py ${LAMBDA_TASK_ROOT}/
 
-# Copy data folder
-COPY chroma_db_docs ${LAMBDA_TASK_ROOT}/chroma_db_docs
-COPY chroma_db_query ${LAMBDA_TASK_ROOT}/chroma_db_query
-
 CMD ["main.handler"]

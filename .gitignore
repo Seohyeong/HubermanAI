@@ -1,14 +1,23 @@
+# vscode
 .vscode
-.env
+
+# cache
 __pycache__
 
-TODO.txt
-run.sh
-rag_output.txt
-
+# logs
 logs/
 api/app.log
+rag_output.txt
 
-history_db.db
-chroma_db*
+# mlflow
 mlruns/
+
+# data
+data/
+
+# secrets
+.env
+app/.streamlit/secrets.toml
+
+# etc
+TODO.txt

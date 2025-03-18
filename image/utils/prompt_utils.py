@@ -1,9 +1,9 @@
 # prompt formatting
 def docs2str(docs):
     return "\n\n".join(
-        f"title: {doc.metadata['video_title']}\n"
-        f"header: {doc.metadata['video_header']}\n"
-        f"content: {doc.page_content}"
+        f"Title: {doc.title}\n"
+        f"Header: {doc.header}\n"
+        f"Content: {doc.context}"
         for doc in docs
     )
 
@@ -49,4 +49,11 @@ IRRELEVANT_QUERY_PROMPT = (
     "Topics include brain health, sleep, fitness, supplementation, mental health, and more. "
     "However, I couldn't find any relevant supporting documents to answer your question.\n"
     "If you have a question in these areas, feel free to ask!"
+)
+
+# answer when the system fails
+ERROR_ANSWER_PROMPT = (
+    "Oops! Something went wrong while processing your request. "
+    "I couldn’t find the information you’re looking for right now. "
+    "Please try again later or rephrase your question!"
 )
