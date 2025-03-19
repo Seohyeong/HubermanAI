@@ -18,7 +18,9 @@ A Retrieval Augmented Generation (RAG) system that lets you query the Huberman L
     * FastAPI hosted on AWS Lambda  
 * Frontend: Built with Streamlit, hosted on Streamlit Cloud
 * RAG Logic: Built with Langchain and OpenAI API
----
+
+## Retrieval Augmented Generation (RAG)
+For each user query, it leverages two LLM generations and two vector store retrievals. First, the query is contextualized by an LLM, incorporating the chat history for better contexualization. Next, a vector store retrieves 10 related queries from a predefined collection of relevant and irrelevant queries to determine if the user’s input fits the system’s context. If classified relevant (based on the majority of retrieved queries being relevant), the query is paired with top 3 retrieved documents and processed by the LLM again to generate a tailored response with episode references and timestamps.
 
 ## Project Structure
 ```sh
