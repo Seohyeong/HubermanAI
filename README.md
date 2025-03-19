@@ -120,4 +120,4 @@ streamlit run app.py
 ```
 
 ## Disclaimer
-This project includes an image of Dr. Andrew Huberman. I do not own the rights to this image. It is used here for illustrative purposes only.
+This project includes an image of Andrew Huberman. I do not own the rights to this image. It is used here for illustrative purposes only.
