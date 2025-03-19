@@ -218,10 +218,10 @@ def test_retriver(host, port, collection_name, query):
     
 
 if __name__ == "__main__":
-    host="35.91.77.87"
-    port=8000
+    host=os.getenv("CHROMA_HOST")
+    port=os.getenv("CHROMA_PORT")
     
-    run_create_query_collection = False
+    run_create_query_collection = True
     run_create_doc_collection = True
     main(host, port, run_create_query_collection, run_create_doc_collection)
     
