@@ -10,7 +10,7 @@ import torch
 from transformers import pipeline
 
 sys.path.append(str(Path(__file__).parent.parent))
-from api.utils.prompt_utils import SYSTEM_PROMPT
+from image.utils.prompt_utils import SYSTEM_PROMPT
 
 
 raw_data_path = os.path.join(str(Path(__file__).parent), "raw_data.json")
